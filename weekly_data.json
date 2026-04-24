@@ -1,0 +1,11 @@
+{
+  "week_start": "2024-12-01T00:00:00",
+  "coins": [],
+  "checks": [
+    {
+      "time": "2024-12-01T09:00:00",
+      "status": "initialized",
+      "message": "Monitoring started"
+    }
+  ]
+}
