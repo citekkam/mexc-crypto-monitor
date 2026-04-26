@@ -1,17 +1,22 @@
 """
-MEXC New Listings Scraper - v7
-Browser intercepts new_coin_calendar API, parses all known field names.
+MEXC New Listings Scraper - v8
+- Intercepts new_coin_calendar via browser session
+- Saves upcoming listings to data/pending_listings.json (committed to repo)
+- Sends Telegram summary
 """
 
 import os
+import json
 import requests
 from datetime import datetime, timezone
+from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 MEXC_URL = "https://www.mexc.com/newlisting"
 TARGET_API = "new_coin_calendar"
 TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
+LISTINGS_FILE = Path("data/pending_listings.json")
 
 
 def fetch_listings() -> list[dict]:
@@ -66,7 +71,6 @@ def fetch_listings() -> list[dict]:
 
     if not result["data"]:
         return []
-
     return parse_listings(result["data"])
 
 
@@ -105,8 +109,9 @@ def parse_listings(data: dict) -> list[dict]:
             if symbol and listing_time and listing_time > now:
                 listings.append({
                     "symbol": symbol,
-                    "listing_time": listing_time,
+                    "listing_time_ts": int(listing_time.timestamp()),
                     "listing_time_str": listing_time.strftime("%Y-%m-%d %H:%M UTC"),
+                    "monitored": False,
                 })
 
             for v in node.values():
@@ -114,7 +119,38 @@ def parse_listings(data: dict) -> list[dict]:
                     walk(v)
 
     walk(data)
-    return listings
+
+    # Deduplicate
+    seen, unique = set(), []
+    for item in listings:
+        if item["symbol"] not in seen:
+            seen.add(item["symbol"])
+            unique.append(item)
+
+    return unique
+
+
+def save_listings(listings: list[dict]):
+    """Merge new listings with existing ones in data/pending_listings.json."""
+    LISTINGS_FILE.parent.mkdir(exist_ok=True)
+    existing = []
+    if LISTINGS_FILE.exists():
+        try:
+            existing = json.loads(LISTINGS_FILE.read_text())
+        except Exception:
+            pass
+
+    existing_symbols = {e["symbol"] for e in existing}
+    added = 0
+    for item in listings:
+        if item["symbol"] not in existing_symbols:
+            existing.append(item)
+            existing_symbols.add(item["symbol"])
+            added += 1
+
+    LISTINGS_FILE.write_text(json.dumps(existing, indent=2))
+    print(f"[+] Saved {len(existing)} total listings ({added} new) to {LISTINGS_FILE}")
+    return added
 
 
 def send_telegram(text: str):
@@ -135,16 +171,17 @@ def format_message(listings: list[dict]) -> str:
             f"📭 No upcoming listings found.\n\n"
             f'🔗 <a href="{MEXC_URL}">Check manually</a>'
         )
-    listings.sort(key=lambda x: x["listing_time"])
     now = datetime.now(tz=timezone.utc)
+    listings_sorted = sorted(listings, key=lambda x: x["listing_time_ts"])
     lines = [
         "🪙 <b>MEXC New Listings</b>",
         f"📅 Scan: {now_str}",
         f"✅ Found: <b>{len(listings)} coins</b>",
         "", "━━━━━━━━━━━━━━━━━━━━",
     ]
-    for i, item in enumerate(listings, 1):
-        delta = item["listing_time"] - now
+    for i, item in enumerate(listings_sorted, 1):
+        lt = datetime.fromtimestamp(item["listing_time_ts"], tz=timezone.utc)
+        delta = lt - now
         d, rem = delta.days, delta.seconds
         h, m = rem // 3600, (rem % 3600) // 60
         ct = f"{d}d {h}h {m}m" if d > 0 else f"{h}h {m}m" if h > 0 else f"{m}m"
@@ -159,23 +196,16 @@ def format_message(listings: list[dict]) -> str:
 
 def main():
     print("=" * 50)
-    print("MEXC New Listings Scraper v7")
+    print("MEXC New Listings Scraper v8")
     print("=" * 50)
 
     listings = fetch_listings()
-
-    seen, unique = set(), []
+    print(f"\n[+] Found {len(listings)} upcoming listings:")
     for item in listings:
-        k = f"{item['symbol']}_{item['listing_time_str']}"
-        if k not in seen:
-            seen.add(k)
-            unique.append(item)
-
-    print(f"\n[+] Found {len(unique)} upcoming listings:")
-    for item in unique:
         print(f"    • {item['symbol']} – {item['listing_time_str']}")
 
-    send_telegram(format_message(unique))
+    save_listings(listings)
+    send_telegram(format_message(listings))
     print("✅ Done!")
 
 
