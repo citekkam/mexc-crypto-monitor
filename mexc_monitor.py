@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
 """
-MEXC Crypto Monitor - Web Scraping z newlisting stránky
+MEXC Crypto Monitor - s Playwright pro JavaScript
 Sleduje https://www.mexc.com/newlisting pro nové coiny
 """
 import os
 import json
 import requests
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
-from bs4 import BeautifulSoup
+from playwright.sync_api import sync_playwright
 
 # Config
 DATA_FILE = "weekly_data.json"
 TIMEOUT = 10
-MAX_COINS = 5
+MAX_COINS = 10
 
 # Secrets
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 print(f"\n{'='*60}")
-print(f"🚀 MEXC Monitor (Web Scraping) - {datetime.utcnow().strftime('%H:%M:%S UTC')}")
+print(f"🚀 MEXC Monitor (Playwright) - {datetime.utcnow().strftime('%H:%M:%S UTC')}")
 print(f"{'='*60}\n")
 
 # ========== TELEGRAM ==========
@@ -49,78 +49,61 @@ def send_msg(text):
         print(f"❌ Telegram error: {e}")
         return False
 
-# ========== WEB SCRAPING ==========
+# ========== WEB SCRAPING S PLAYWRIGHT ==========
 def get_new_listings():
-    """Scrapuje MEXC newlisting stránku"""
-    print("\n📍 Stahuji MEXC newlisting stránku...")
+    """Scrapuje MEXC newlisting stránku s Playwright"""
+    print("\n📍 Otevírám MEXC newlisting v browseru...")
     try:
-        url = "https://www.mexc.com/newlisting"
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        }
-        
-        r = requests.get(url, headers=headers, timeout=TIMEOUT)
-        r.raise_for_status()
-        
-        # Parse HTML
-        soup = BeautifulSoup(r.content, 'html.parser')
-        
-        # Hledá se data v JSON formátu nebo data attributech
-        # MEXC obvykle má data v <script> tagech
-        scripts = soup.find_all('script')
-        coins_data = []
-        
-        for script in scripts:
-            if script.string:
-                script_text = script.string
-                
-                # Hledá vzor s symbol a listen time
-                # Typicky: "symbol":"BTC/USDT","listingTime":"2024-01-01T10:00:00Z"
-                symbol_matches = re.findall(r'"symbol"\s*:\s*"([A-Z0-9/]+)"', script_text)
-                time_matches = re.findall(r'"listingTime"\s*:\s*"([^"]+)"', script_text)
-                
-                if symbol_matches:
-                    for i, symbol in enumerate(symbol_matches[:MAX_COINS]):
-                        if symbol.endswith('USDT') or symbol.endswith('BTC'):
-                            coins_data.append({
-                                "symbol": symbol,
-                                "time": time_matches[i] if i < len(time_matches) else None
-                            })
-        
-        # Fallback: pokud se nepodařilo najít v script tagech, zkusí tabulku
-        if not coins_data:
-            print("  ⚠️ Nebyla data v <script> tagech, hledám v tabulce...")
+        with sync_playwright() as p:
+            # Spusť browser
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
             
-            # Hledá libovolné prvky s coin symbolem
-            rows = soup.find_all(['tr', 'div'], class_=re.compile(r'(coin|listing|row)', re.I))
+            # Jdi na stránku
+            print("  ⏳ Čekám na stránku...")
+            page.goto("https://www.mexc.com/newlisting", wait_until="domcontentloaded", timeout=30000)
             
-            for row in rows[:MAX_COINS]:
-                text = row.get_text()
-                # Hledá vzor: XXX/USDT
-                match = re.search(r'([A-Z0-9]+/USDT)', text)
-                if match:
-                    symbol = match.group(1)
-                    if symbol not in [c["symbol"] for c in coins_data]:
+            # Čekej na obsah (max 10 sekund)
+            try:
+                page.wait_for_selector('[class*="coin"], [class*="symbol"], [class*="listing"]', timeout=10000)
+                print("  ✅ Stránka se načetla")
+            except:
+                print("  ⚠️ Selektor nenalezen, zkusím obecný parser")
+            
+            # Vezmi HTML
+            html = page.content()
+            browser.close()
+            
+            # Parse HTML a hledej symboly
+            coins_data = []
+            
+            # Hledá textové vzory: XXX/USDT, XXX/BUSD, atd
+            # Musí být kapitálky a lomítko
+            matches = re.findall(r'\b([A-Z][A-Z0-9]{0,10})/([A-Z]{4,6})\b', html)
+            
+            seen = set()
+            for symbol, quote in matches:
+                full_symbol = f"{symbol}/{quote}"
+                
+                # Filtruj jen USDT a podobné páry
+                if quote in ['USDT', 'BUSD', 'USDC', 'BTC', 'ETH'] and full_symbol not in seen:
+                    # Zkontroluj, že není to duplicita nebo garbage
+                    if len(symbol) >= 2 and len(symbol) <= 15:
                         coins_data.append({
-                            "symbol": symbol,
+                            "symbol": full_symbol,
                             "time": None
                         })
-        
-        # Deduplikace
-        seen = set()
-        unique_coins = []
-        for coin in coins_data:
-            if coin["symbol"] not in seen:
-                seen.add(coin["symbol"])
-                unique_coins.append(coin)
-        
-        print(f"✅ Nalezeno {len(unique_coins)} coinů")
-        return unique_coins[:MAX_COINS]
+                        seen.add(full_symbol)
+                        
+                        if len(coins_data) >= MAX_COINS:
+                            break
+            
+            print(f"✅ Nalezeno {len(coins_data)} coinů z HTML")
+            return coins_data
         
     except Exception as e:
-        print(f"❌ Scraping error: {e}")
-        # Fallback na API
-        print("  ℹ️ Fallback na MEXC API...")
+        print(f"❌ Playwright error: {e}")
+        print("  ℹ️ Fallback na API...")
         return get_coins_from_api()
 
 def get_coins_from_api():
