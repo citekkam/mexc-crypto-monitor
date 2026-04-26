@@ -2,7 +2,7 @@ name: 🪙 MEXC New Listings Scraper
 
 on:
   schedule:
-    - cron: '0 8,13,20 * * *'   # 3x daily: 8:00, 14:00, 20:00 UTC
+    - cron: '0 8,14,20 * * *'   # 3x daily: 8:00, 14:00, 20:00 UTC
   workflow_dispatch:
 
 jobs:
