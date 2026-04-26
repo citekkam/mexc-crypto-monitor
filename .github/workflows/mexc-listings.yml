@@ -2,31 +2,26 @@ name: 🪙 MEXC New Listings Scraper
 
 on:
   schedule:
-    # Spustí se každý den ve 9:00 UTC
-    - cron: '0 9 * * *'
+    - cron: '0 8,13,20 * * *'   # 3x daily: 8:00, 14:00, 20:00 UTC
   workflow_dispatch:
-    # Umožní manuální spuštění přes GitHub UI
 
 jobs:
   scrape-and-notify:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout repozitáře
+      - name: 📥 Checkout
         uses: actions/checkout@v4
 
-      - name: 🐍 Nastavení Pythonu
+      - name: 🐍 Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: 📦 Instalace závislostí
-        run: |
-          pip install playwright requests python-dateutil
-          playwright install chromium
-          playwright install-deps chromium
+      - name: 📦 Install dependencies
+        run: pip install requests python-dateutil
 
-      - name: 🔍 Scraping MEXC New Listings
+      - name: 🔍 Scrape & Notify
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
