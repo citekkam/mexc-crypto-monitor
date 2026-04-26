@@ -1,24 +1,27 @@
 #!/usr/bin/env python3
 """
-MEXC Crypto Monitor - Jednoduchá verze
-Sleduje nové coiny a jejich výkonnost za 20 minut
+MEXC Crypto Monitor - Web Scraping z newlisting stránky
+Sleduje https://www.mexc.com/newlisting pro nové coiny
 """
 import os
 import json
 import requests
+import re
 from datetime import datetime
 from pathlib import Path
+from bs4 import BeautifulSoup
 
 # Config
 DATA_FILE = "weekly_data.json"
 TIMEOUT = 10
+MAX_COINS = 5
 
 # Secrets
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 print(f"\n{'='*60}")
-print(f"🚀 MEXC Monitor START - {datetime.utcnow().strftime('%H:%M:%S UTC')}")
+print(f"🚀 MEXC Monitor (Web Scraping) - {datetime.utcnow().strftime('%H:%M:%S UTC')}")
 print(f"{'='*60}\n")
 
 # ========== TELEGRAM ==========
@@ -37,7 +40,7 @@ def send_msg(text):
         }
         r = requests.post(url, json=payload, timeout=TIMEOUT)
         if r.status_code == 200:
-            print(f"✅ Telegram OK: {text[:50]}...")
+            print(f"✅ Telegram OK")
             return True
         else:
             print(f"❌ Telegram failed: {r.status_code}")
@@ -46,10 +49,83 @@ def send_msg(text):
         print(f"❌ Telegram error: {e}")
         return False
 
-# ========== MEXC API ==========
-def get_coins():
-    """Stáhne trading páry z MEXC"""
-    print("\n📍 Stahuju MEXC coiny...")
+# ========== WEB SCRAPING ==========
+def get_new_listings():
+    """Scrapuje MEXC newlisting stránku"""
+    print("\n📍 Stahuji MEXC newlisting stránku...")
+    try:
+        url = "https://www.mexc.com/newlisting"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
+        
+        r = requests.get(url, headers=headers, timeout=TIMEOUT)
+        r.raise_for_status()
+        
+        # Parse HTML
+        soup = BeautifulSoup(r.content, 'html.parser')
+        
+        # Hledá se data v JSON formátu nebo data attributech
+        # MEXC obvykle má data v <script> tagech
+        scripts = soup.find_all('script')
+        coins_data = []
+        
+        for script in scripts:
+            if script.string:
+                script_text = script.string
+                
+                # Hledá vzor s symbol a listen time
+                # Typicky: "symbol":"BTC/USDT","listingTime":"2024-01-01T10:00:00Z"
+                symbol_matches = re.findall(r'"symbol"\s*:\s*"([A-Z0-9/]+)"', script_text)
+                time_matches = re.findall(r'"listingTime"\s*:\s*"([^"]+)"', script_text)
+                
+                if symbol_matches:
+                    for i, symbol in enumerate(symbol_matches[:MAX_COINS]):
+                        if symbol.endswith('USDT') or symbol.endswith('BTC'):
+                            coins_data.append({
+                                "symbol": symbol,
+                                "time": time_matches[i] if i < len(time_matches) else None
+                            })
+        
+        # Fallback: pokud se nepodařilo najít v script tagech, zkusí tabulku
+        if not coins_data:
+            print("  ⚠️ Nebyla data v <script> tagech, hledám v tabulce...")
+            
+            # Hledá libovolné prvky s coin symbolem
+            rows = soup.find_all(['tr', 'div'], class_=re.compile(r'(coin|listing|row)', re.I))
+            
+            for row in rows[:MAX_COINS]:
+                text = row.get_text()
+                # Hledá vzor: XXX/USDT
+                match = re.search(r'([A-Z0-9]+/USDT)', text)
+                if match:
+                    symbol = match.group(1)
+                    if symbol not in [c["symbol"] for c in coins_data]:
+                        coins_data.append({
+                            "symbol": symbol,
+                            "time": None
+                        })
+        
+        # Deduplikace
+        seen = set()
+        unique_coins = []
+        for coin in coins_data:
+            if coin["symbol"] not in seen:
+                seen.add(coin["symbol"])
+                unique_coins.append(coin)
+        
+        print(f"✅ Nalezeno {len(unique_coins)} coinů")
+        return unique_coins[:MAX_COINS]
+        
+    except Exception as e:
+        print(f"❌ Scraping error: {e}")
+        # Fallback na API
+        print("  ℹ️ Fallback na MEXC API...")
+        return get_coins_from_api()
+
+def get_coins_from_api():
+    """Fallback: získá coiny z API"""
+    print("📍 Fallback: Stahuji z MEXC API...")
     try:
         url = "https://api.mexc.com/api/v3/exchangeInfo"
         r = requests.get(url, timeout=TIMEOUT)
@@ -59,16 +135,20 @@ def get_coins():
         coins = []
         for sym in data.get("symbols", []):
             if sym.get("status") == "TRADING" and sym.get("symbol", "").endswith("USDT"):
-                coins.append(sym["symbol"])
-                if len(coins) >= 5:  # Stačí 5 pro test
+                coins.append({
+                    "symbol": sym["symbol"],
+                    "time": None
+                })
+                if len(coins) >= MAX_COINS:
                     break
         
-        print(f"✅ Nalezeno {len(coins)} coinů")
+        print(f"✅ API: Nalezeno {len(coins)} coinů")
         return coins
     except Exception as e:
-        print(f"❌ MEXC API error: {e}")
+        print(f"❌ API fallback error: {e}")
         return []
 
+# ========== MEXC API PRICES ==========
 def get_prices(symbol):
     """Stáhne ceny za posledních 20 minut"""
     print(f"  📈 Stahuji {symbol}...")
@@ -77,7 +157,7 @@ def get_prices(symbol):
         params = {
             "symbol": symbol,
             "interval": "1m",
-            "limit": 25  # 20 minut + rezerva
+            "limit": 25
         }
         r = requests.get(url, params=params, timeout=TIMEOUT)
         r.raise_for_status()
@@ -142,14 +222,15 @@ def save_data(data):
 print("📌 Kontrola Telegram...")
 send_msg(f"🤖 Monitor check: {datetime.utcnow().strftime('%H:%M UTC')}")
 
-print("\n📌 Kontrola MEXC...")
-coins = get_coins()
+print("\n📌 Scraping MEXC newlisting...")
+coins = get_new_listings()
 
 if coins:
     print(f"\n📌 Zpracování {len(coins)} coinů...")
     data = load_data()
     
-    for symbol in coins:
+    for coin in coins:
+        symbol = coin["symbol"]
         prices = get_prices(symbol)
         
         if prices:
@@ -179,7 +260,7 @@ else:
     send_msg("✔️ Žádné nové coiny")
     print("\n✔️ Žádné coiny")
 
-# Nedělí report
+# Nedělní report
 if datetime.utcnow().weekday() == 6:
     coins_list = data.get("coins", [])
     msg = f"📊 <b>Týdenní Report</b>\n"
@@ -187,7 +268,7 @@ if datetime.utcnow().weekday() == 6:
     
     if coins_list:
         perf_list = [c["perf"] for c in coins_list]
-        for coin in coins_list[:10]:  # Max 10 v report
+        for coin in coins_list[:10]:
             msg += f"<b>{coin['symbol']}</b>: +{coin['perf']}%\n"
         msg += f"\n<b>Avg: +{round(sum(perf_list)/len(perf_list), 2)}%</b>"
     
