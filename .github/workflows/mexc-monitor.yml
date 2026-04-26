@@ -1,0 +1,39 @@
+name: 📊 MEXC Listing Price Monitor
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'   # every 5 minutes - checks if any coin just listed
+  workflow_dispatch:
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to mark coins as monitored
+    timeout-minutes: 30  # allows 20min monitoring + overhead
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 📦 Install dependencies
+        run: pip install requests
+
+      - name: 📊 Monitor listings
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python scripts/monitor_listing.py
+
+      - name: 💾 Commit monitor results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/pending_listings.json
+          git diff --staged --quiet || git commit -m "chore: update monitor results [skip ci]"
+          git push
