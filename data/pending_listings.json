@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "symbol": "STAY",
+    "listing_time_ts": 1777287600,
+    "listing_time_str": "2026-04-27 11:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "XRPHAI",
+    "listing_time_ts": 1777284000,
+    "listing_time_str": "2026-04-27 10:00 UTC",
+    "monitored": false
+  }
+]
