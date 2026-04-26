@@ -1,7 +1,9 @@
 """
-MEXC New Listings Scraper
-Scrapuje budoucí release časy z https://www.mexc.com/newlisting
-a odesílá shrnutí přes Telegram bota.
+MEXC New Listings Scraper - Fixed v2
+Fixes:
+  - networkidle timeout  domcontentloaded + manual wait
+  - Bot detection  stealth Chromium args + realistic headers
+  - API interception  captures MEXC's own XHR calls (most reliable)
 """
 
 import os
@@ -9,386 +11,293 @@ import re
 import json
 import requests
 from datetime import datetime, timezone
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, Response
 
 
 MEXC_URL = "https://www.mexc.com/newlisting"
 TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 
+API_KEYWORDS = [
+    "new_listing", "newlisting", "new-listing",
+    "upcomingList", "upcoming_list", "activity/query",
+    "spot/listing", "listing/list", "operateactivity",
+]
+
 
 def scrape_listings() -> list[dict]:
-    """Scrape budoucích coin listingů z MEXC pomocí Playwright."""
+    intercepted_data = []
     listings = []
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(
+            headless=True,
+            args=[
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-blink-features=AutomationControlled",
+                "--disable-dev-shm-usage",
+                "--disable-gpu",
+                "--window-size=1280,900",
+            ],
+        )
+
         context = browser.new_context(
+            viewport={"width": 1280, "height": 900},
             user_agent=(
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/120.0.0.0 Safari/537.36"
+                "Chrome/124.0.0.0 Safari/537.36"
             ),
-            viewport={"width": 1280, "height": 900},
+            extra_http_headers={
+                "Accept-Language": "en-US,en;q=0.9",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+                "Sec-Ch-Ua": '"Chromium";v="124", "Google Chrome";v="124"',
+                "Sec-Ch-Ua-Mobile": "?0",
+                "Sec-Ch-Ua-Platform": '"Windows"',
+            },
         )
+
+        context.add_init_script("""
+            Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+            window.chrome = { runtime: {} };
+            Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+        """)
+
         page = context.new_page()
 
-        print(f"[*] Načítám {MEXC_URL} ...")
-        page.goto(MEXC_URL, wait_until="networkidle", timeout=60_000)
+        def handle_response(response: Response):
+            url = response.url.lower()
+            if any(kw in url for kw in API_KEYWORDS):
+                try:
+                    body = response.json()
+                    print(f"[+] Intercepted API: {response.url[:120]}")
+                    intercepted_data.append({"url": response.url, "body": body})
+                except Exception:
+                    pass
 
-        # Počkáme, až se načtou karty s listingy
+        page.on("response", handle_response)
+
+        print(f"[*] Loading {MEXC_URL} ...")
         try:
-            page.wait_for_selector(
-                "div[class*='listing'], div[class*='project'], "
-                "div[class*='token'], div[class*='coin'], "
-                ".new-listing-item, [data-testid*='listing']",
-                timeout=20_000,
-            )
-        except Exception:
-            print("[!] Specifický selektor nenalezen, zkouším obecnější přístup...")
+            page.goto(MEXC_URL, wait_until="domcontentloaded", timeout=45_000)
+        except Exception as e:
+            print(f"[!] goto error (continuing): {e}")
 
-        # Scroll dolů, aby se načetly lazy-loaded položky
-        for _ in range(5):
-            page.mouse.wheel(0, 1500)
-            page.wait_for_timeout(1000)
+        print("[*] Waiting for XHR calls...")
+        page.wait_for_timeout(8_000)
 
-        # --- Pokus 1: zachytit API odpovědi přes síť (nejspolehlivější) ---
-        # MEXC typicky volá interní API – zkusíme interceptovat
-        page.reload(wait_until="networkidle")
+        for _ in range(4):
+            page.mouse.wheel(0, 1200)
+            page.wait_for_timeout(1500)
 
-        # Získej celý HTML pro parsování
-        html_content = page.content()
+        page.wait_for_timeout(3_000)
 
-        # --- Pokus 2: přímá extrakce z DOM ---
-        listings = extract_from_dom(page)
+        if intercepted_data:
+            print(f"[+] Processing {len(intercepted_data)} intercepted responses...")
+            for item in intercepted_data:
+                listings.extend(extract_from_json(item["body"]))
+        else:
+            print("[!] No API calls intercepted, falling back to DOM...")
 
         if not listings:
-            print("[!] DOM extrakce selhala, zkouším zachytit JSON data...")
-            listings = extract_from_html(html_content)
+            listings = extract_from_dom(page)
+
+        if not listings:
+            print("[!] DOM fallback failed, trying raw HTML...")
+            listings = extract_from_html(page.content())
 
         browser.close()
 
-    return listings
+    seen, unique = set(), []
+    for item in listings:
+        k = f"{item['symbol']}_{item['listing_time_str']}"
+        if k not in seen:
+            seen.add(k)
+            unique.append(item)
+    return unique
 
 
 def extract_from_dom(page) -> list[dict]:
-    """Extrahuj listing data přímo z DOM elementů."""
     listings = []
-
-    # Zkus různé selektory, které MEXC používá
-    selectors_to_try = [
-        # Obecné karty
-        "div[class*='listing-item']",
-        "div[class*='ProjectItem']",
-        "div[class*='project-item']",
-        "div[class*='token-item']",
-        "div[class*='newListing']",
-        ".listing-card",
-        "[class*='NewListing'] > div",
-        "[class*='listItem']",
+    selectors = [
+        "[class*='listing-item']", "[class*='ProjectItem']",
+        "[class*='project-item']", "[class*='newListing']",
+        "[class*='NewListing'] > div", "[class*='listItem']", ".listing-card",
     ]
-
-    for selector in selectors_to_try:
+    for sel in selectors:
         try:
-            items = page.query_selector_all(selector)
+            items = page.query_selector_all(sel)
             if items:
-                print(f"[+] Nalezeno {len(items)} položek s selektorem: {selector}")
+                print(f"[+] DOM: {len(items)} items via '{sel}'")
                 for item in items:
-                    try:
-                        text = item.inner_text()
-                        listing = parse_listing_text(text)
-                        if listing:
-                            listings.append(listing)
-                    except Exception:
-                        continue
-                break
+                    parsed = parse_listing_text(item.inner_text())
+                    if parsed:
+                        listings.append(parsed)
+                if listings:
+                    break
         except Exception:
             continue
-
-    # Fallback: hledáme všechny texty s coiny a časy
     if not listings:
-        print("[*] Zkouším fallback – hledám libovolné texty s časy...")
         try:
-            all_text = page.inner_text("body")
-            listings = parse_raw_text(all_text)
+            listings = parse_raw_text(page.inner_text("body"))
         except Exception as e:
-            print(f"[!] Fallback selhal: {e}")
-
+            print(f"[!] Body parse failed: {e}")
     return listings
 
 
 def extract_from_html(html: str) -> list[dict]:
-    """Extrahuj data ze surového HTML / JSON chunků vložených do stránky."""
-    listings = []
-
-    # Hledej JSON data vložená do stránky (Next.js / Nuxt pattern)
-    json_patterns = [
-        r'window\.__NUXT__\s*=\s*(\{.*?\});',
+    for pattern in [
         r'"listing"\s*:\s*(\[.*?\])',
         r'"newListing"\s*:\s*(\[.*?\])',
         r'"upcomingListings"\s*:\s*(\[.*?\])',
         r'"data"\s*:\s*(\[.*?"symbol".*?\])',
-    ]
-
-    for pattern in json_patterns:
-        matches = re.findall(pattern, html, re.DOTALL)
-        for match in matches:
+    ]:
+        for match in re.findall(pattern, html, re.DOTALL):
             try:
                 data = json.loads(match)
                 extracted = extract_from_json(data)
                 if extracted:
-                    listings.extend(extracted)
-                    print(f"[+] Nalezeno {len(extracted)} listingů z JSON patternu")
-                    return listings
+                    return extracted
             except json.JSONDecodeError:
                 continue
-
-    return listings
+    return []
 
 
 def extract_from_json(data) -> list[dict]:
-    """Rekurzivně prohledej JSON strukturu a hledej listing záznamy."""
     listings = []
-
     if isinstance(data, list):
         for item in data:
             if isinstance(item, dict):
-                listing = try_parse_json_item(item)
-                if listing:
-                    listings.append(listing)
-                else:
-                    listings.extend(extract_from_json(item))
+                parsed = try_parse_json_item(item)
+                listings.append(parsed) if parsed else listings.extend(extract_from_json(item))
     elif isinstance(data, dict):
         for value in data.values():
             listings.extend(extract_from_json(value))
-
     return listings
 
 
 def try_parse_json_item(item: dict) -> dict | None:
-    """Pokus se parsovat jeden JSON objekt jako listing."""
-    # Hledáme záznamy s názvem coinu a časem
-    symbol_keys = ["symbol", "coinName", "name", "token", "currency", "vcoinName"]
-    time_keys = [
-        "listingTime", "listing_time", "openTime", "releaseTime",
-        "launchTime", "time", "startTime", "tradingTime"
-    ]
-
-    symbol = None
-    for key in symbol_keys:
-        if key in item and isinstance(item[key], str):
-            symbol = item[key].upper()
-            break
-
+    symbol = next(
+        (item[k].upper() for k in ["symbol","coinName","name","token","currency","vcoinName"]
+         if k in item and isinstance(item[k], str)), None
+    )
+    if not symbol:
+        return None
     listing_time = None
-    for key in time_keys:
-        if key in item:
-            val = item[key]
-            # Unix timestamp (ms nebo s)
-            if isinstance(val, (int, float)) and val > 1_000_000_000:
-                ts = val / 1000 if val > 1e12 else val
-                listing_time = datetime.fromtimestamp(ts, tz=timezone.utc)
+    for key in ["listingTime","listing_time","openTime","releaseTime","launchTime","time","startTime","tradingTime"]:
+        val = item.get(key)
+        if not val:
+            continue
+        if isinstance(val, (int, float)) and val > 1_000_000_000:
+            ts = val / 1000 if val > 1e12 else val
+            listing_time = datetime.fromtimestamp(ts, tz=timezone.utc)
+            break
+        if isinstance(val, str) and len(val) > 8:
+            try:
+                from dateutil import parser as dp
+                listing_time = dp.parse(val)
+                if not listing_time.tzinfo:
+                    listing_time = listing_time.replace(tzinfo=timezone.utc)
                 break
-            # ISO string
-            elif isinstance(val, str) and len(val) > 8:
-                try:
-                    from dateutil import parser as date_parser
-                    listing_time = date_parser.parse(val)
-                    if listing_time.tzinfo is None:
-                        listing_time = listing_time.replace(tzinfo=timezone.utc)
-                    break
-                except Exception:
-                    pass
-
-    if symbol and listing_time:
-        now = datetime.now(tz=timezone.utc)
-        if listing_time > now:  # pouze budoucí
-            return {
-                "symbol": symbol,
-                "listing_time": listing_time,
-                "listing_time_str": listing_time.strftime("%Y-%m-%d %H:%M UTC"),
-                "raw": item,
-            }
+            except Exception:
+                pass
+    if symbol and listing_time and listing_time > datetime.now(tz=timezone.utc):
+        return {"symbol": symbol, "listing_time": listing_time,
+                "listing_time_str": listing_time.strftime("%Y-%m-%d %H:%M UTC")}
     return None
 
 
 def parse_listing_text(text: str) -> dict | None:
-    """Parsuj text karty a extrahuj symbol + čas."""
-    # Hledáme pattern jako "SYMBOL/USDT ... 2025-01-15 10:00"
-    time_pattern = r'(\d{4}-\d{2}-\d{2}[\s\T]\d{2}:\d{2}(?::\d{2})?)'
-    time_match = re.search(time_pattern, text)
-
-    symbol_pattern = r'\b([A-Z]{2,10})(?:/USDT|/BTC|/ETH)?\b'
-    symbol_match = re.search(symbol_pattern, text)
-
-    if time_match and symbol_match:
+    tm = re.search(r'(\d{4}-\d{2}-\d{2}[\sT]\d{2}:\d{2}(?::\d{2})?)', text)
+    sm = re.search(r'\b([A-Z]{2,10})(?:/USDT|/BTC|/ETH)?\b', text)
+    if tm and sm:
         try:
-            from dateutil import parser as date_parser
-            listing_time = date_parser.parse(time_match.group(1))
-            if listing_time.tzinfo is None:
-                listing_time = listing_time.replace(tzinfo=timezone.utc)
-            now = datetime.now(tz=timezone.utc)
-            if listing_time > now:
-                return {
-                    "symbol": symbol_match.group(1),
-                    "listing_time": listing_time,
-                    "listing_time_str": listing_time.strftime("%Y-%m-%d %H:%M UTC"),
-                    "raw_text": text[:200],
-                }
+            from dateutil import parser as dp
+            lt = dp.parse(tm.group(1)).replace(tzinfo=timezone.utc)
+            if lt > datetime.now(tz=timezone.utc):
+                return {"symbol": sm.group(1), "listing_time": lt,
+                        "listing_time_str": lt.strftime("%Y-%m-%d %H:%M UTC")}
         except Exception:
             pass
     return None
 
 
 def parse_raw_text(text: str) -> list[dict]:
-    """Fallback parser pro surový text celé stránky."""
-    listings = []
-    time_pattern = r'(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(?::\d{2})?)'
-    symbol_pattern = r'\b([A-Z]{2,10})\b'
-
-    lines = text.split('\n')
-    for line in lines:
-        time_match = re.search(time_pattern, line)
-        if time_match:
-            symbols = re.findall(symbol_pattern, line)
-            # Filtruj běžná anglická slova
-            ignore = {
-                "USDT", "UTC", "AM", "PM", "THE", "FOR", "AND", "NEW",
-                "ALL", "BTC", "ETH", "LIST", "OPEN", "SPOT", "API"
-            }
-            coins = [s for s in symbols if s not in ignore and len(s) >= 3]
-            if coins:
-                try:
-                    from dateutil import parser as date_parser
-                    listing_time = date_parser.parse(time_match.group(1))
-                    if listing_time.tzinfo is None:
-                        listing_time = listing_time.replace(tzinfo=timezone.utc)
-                    now = datetime.now(tz=timezone.utc)
-                    if listing_time > now:
-                        listings.append({
-                            "symbol": coins[0],
-                            "listing_time": listing_time,
-                            "listing_time_str": listing_time.strftime(
-                                "%Y-%m-%d %H:%M UTC"
-                            ),
-                            "raw_text": line[:200],
-                        })
-                except Exception:
-                    continue
-
-    # Deduplikace
-    seen = set()
-    unique = []
-    for item in listings:
-        key = f"{item['symbol']}_{item['listing_time_str']}"
-        if key not in seen:
-            seen.add(key)
-            unique.append(item)
-
-    return unique
+    IGNORE = {"USDT","UTC","AM","PM","THE","FOR","AND","NEW","ALL","BTC","ETH","LIST","OPEN","SPOT","API"}
+    listings, seen = [], set()
+    for line in text.split("\n"):
+        tm = re.search(r'(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(?::\d{2})?)', line)
+        if not tm:
+            continue
+        coins = [s for s in re.findall(r'\b([A-Z]{2,10})\b', line) if s not in IGNORE and len(s) >= 3]
+        if not coins:
+            continue
+        try:
+            from dateutil import parser as dp
+            lt = dp.parse(tm.group(1)).replace(tzinfo=timezone.utc)
+            if lt > datetime.now(tz=timezone.utc):
+                k = f"{coins[0]}_{lt.strftime('%Y-%m-%d %H:%M UTC')}"
+                if k not in seen:
+                    seen.add(k)
+                    listings.append({"symbol": coins[0], "listing_time": lt,
+                                     "listing_time_str": lt.strftime("%Y-%m-%d %H:%M UTC")})
+        except Exception:
+            continue
+    return listings
 
 
 def send_telegram_message(text: str) -> bool:
-    """Odešli zprávu přes Telegram Bot API."""
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
-        "text": text,
-        "parse_mode": "HTML",
-        "disable_web_page_preview": True,
-    }
     try:
-        response = requests.post(url, json=payload, timeout=15)
-        response.raise_for_status()
-        print("[+] Telegram zpráva odeslána úspěšně!")
+        r = requests.post(url, json={"chat_id": TELEGRAM_CHAT_ID, "text": text,
+                                      "parse_mode": "HTML", "disable_web_page_preview": True}, timeout=15)
+        r.raise_for_status()
+        print("[+] Telegram message sent!")
         return True
     except requests.RequestException as e:
-        print(f"[!] Chyba při odesílání Telegram zprávy: {e}")
+        print(f"[!] Telegram error: {e}")
         return False
 
 
 def format_telegram_message(listings: list[dict]) -> str:
-    """Naformátuj zprávu pro Telegram."""
     now_str = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-
     if not listings:
-        return (
-            "🪙 <b>MEXC New Listings – Žádné nalezeny</b>\n\n"
-            f"Sken proběhl: {now_str}\n"
-            "📭 Nebyly nalezeny žádné budoucí listingy.\n\n"
-            f'🔗 <a href="{MEXC_URL}">Zkontroluj ručně</a>'
-        )
+        return (f"🪙 <b>MEXC New Listings</b>\n\n📅 Scan: {now_str}\n"
+                f'📭 No upcoming listings found.\n\n🔗 <a href="{MEXC_URL}">Check manually</a>')
 
-    # Seřaď podle času
     listings.sort(key=lambda x: x["listing_time"])
-
-    lines = [
-        f"🪙 <b>MEXC New Listings</b>",
-        f"📅 Sken: {now_str}",
-        f"✅ Nalezeno celkem: <b>{len(listings)} coinů</b>",
-        "",
-        "━━━━━━━━━━━━━━━━━━━━",
-    ]
-
-    for i, listing in enumerate(listings, 1):
-        symbol = listing["symbol"]
-        time_str = listing["listing_time_str"]
-
-        # Výpočet zbývajícího času
-        now = datetime.now(tz=timezone.utc)
-        delta = listing["listing_time"] - now
-        days = delta.days
-        hours = delta.seconds // 3600
-        minutes = (delta.seconds % 3600) // 60
-
-        if days > 0:
-            countdown = f"{days}d {hours}h {minutes}m"
-        elif hours > 0:
-            countdown = f"{hours}h {minutes}m"
-        else:
-            countdown = f"{minutes}m"
-
-        lines.append(
-            f"\n{i}. <b>{symbol}</b>\n"
-            f"   🕐 {time_str}\n"
-            f"   ⏳ Za: {countdown}"
-        )
-
-    lines.append(f"\n━━━━━━━━━━━━━━━━━━━━")
-    lines.append(f'🔗 <a href="{MEXC_URL}">MEXC New Listing</a>')
-
+    now = datetime.now(tz=timezone.utc)
+    lines = ["🪙 <b>MEXC New Listings</b>", f"📅 Scan: {now_str}",
+             f"✅ Found: <b>{len(listings)} coins</b>", "", "━━━━━━━━━━━━━━━━━━━━"]
+    for i, item in enumerate(listings, 1):
+        delta = item["listing_time"] - now
+        d, rem = delta.days, delta.seconds
+        h, m = rem // 3600, (rem % 3600) // 60
+        countdown = f"{d}d {h}h {m}m" if d > 0 else f"{h}h {m}m" if h > 0 else f"{m}m"
+        lines.append(f"\n{i}. <b>{item['symbol']}</b>\n   🕐 {item['listing_time_str']}\n   ⏳ In: {countdown}")
+    lines += ["\n━━━━━━━━━━━━━━━━━━━━", f'🔗 <a href="{MEXC_URL}">MEXC New Listing</a>']
     return "\n".join(lines)
 
 
 def main():
     print("=" * 50)
-    print("MEXC New Listings Scraper")
+    print("MEXC New Listings Scraper v2")
     print("=" * 50)
-
-    # Ověř environment variables
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        raise ValueError(
-            "Chybí TELEGRAM_BOT_TOKEN nebo TELEGRAM_CHAT_ID env proměnné!"
-        )
+        raise ValueError("Missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID!")
 
-    # Scraping
-    print("\n[*] Spouštím scraper...")
+    print("\n[*] Starting scraper...")
     listings = scrape_listings()
+    print(f"\n[+] Found {len(listings)} upcoming listings:")
+    for item in listings:
+        print(f"    • {item['symbol']} – {item['listing_time_str']}")
 
-    print(f"\n[+] Nalezeno {len(listings)} budoucích listingů")
-    for listing in listings:
-        print(f"    • {listing['symbol']} – {listing['listing_time_str']}")
-
-    # Formátování a odeslání
     message = format_telegram_message(listings)
-    print("\n[*] Odesílám Telegram notifikaci...")
-    print(f"\nZpráva:\n{message}\n")
-
-    success = send_telegram_message(message)
-    if not success:
-        raise RuntimeError("Nepodařilo se odeslat Telegram zprávu!")
-
-    print("\n✅ Hotovo!")
+    print(f"\n[*] Sending Telegram notification...\n{message}\n")
+    if not send_telegram_message(message):
+        raise RuntimeError("Failed to send Telegram message!")
+    print("\n✅ Done!")
 
 
 if __name__ == "__main__":
