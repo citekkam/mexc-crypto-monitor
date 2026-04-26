@@ -219,6 +219,9 @@ def save_data(data):
     print("✅ Data uložena")
 
 # ========== MAIN ==========
+# DŮLEŽITÉ: Vždycky načti data na začátku!
+data = load_data()
+
 print("📌 Kontrola Telegram...")
 send_msg(f"🤖 Monitor check: {datetime.utcnow().strftime('%H:%M UTC')}")
 
@@ -227,7 +230,6 @@ coins = get_new_listings()
 
 if coins:
     print(f"\n📌 Zpracování {len(coins)} coinů...")
-    data = load_data()
     
     for coin in coins:
         symbol = coin["symbol"]
@@ -271,6 +273,8 @@ if datetime.utcnow().weekday() == 6:
         for coin in coins_list[:10]:
             msg += f"<b>{coin['symbol']}</b>: +{coin['perf']}%\n"
         msg += f"\n<b>Avg: +{round(sum(perf_list)/len(perf_list), 2)}%</b>"
+    else:
+        msg += "Žádné coiny v tomto týdnu"
     
     send_msg(msg)
     
