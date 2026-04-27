@@ -94,7 +94,7 @@ def main():
     print(f"Listing: {LISTING_TIME_STR} (ts={LISTING_TIME_TS})")
     print("="*50)
 
-    if not SYMBOL or not LISTING_TIME_TS:
+    if not SYMBOL or os.environ.get("LISTING_TIME_TS", "") == "":
         print("[!] COIN_SYMBOL or LISTING_TIME_TS not set!")
         sys.exit(1)
 
