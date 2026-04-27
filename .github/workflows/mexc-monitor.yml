@@ -32,24 +32,20 @@ jobs:
       - name: 📦 Install deps
         run: pip install requests
 
-      # For workflow_dispatch — set from inputs
-      - name: Set env from inputs (manual trigger)
-        if: github.event_name == 'workflow_dispatch'
+      - name: Set env variables
         run: |
-          echo "COIN_SYMBOL=${{ inputs.symbol }}" >> $GITHUB_ENV
-          echo "LISTING_TIME_TS=${{ inputs.listing_time_ts }}" >> $GITHUB_ENV
-          echo "LISTING_TIME_STR=${{ inputs.listing_time_str }}" >> $GITHUB_ENV
-
-      # For repository_dispatch — set from client_payload
-      - name: Set env from payload (auto trigger)
-        if: github.event_name == 'repository_dispatch'
-        run: |
-          echo "COIN_SYMBOL=${{ github.event.client_payload.symbol }}" >> $GITHUB_ENV
-          echo "LISTING_TIME_TS=${{ github.event.client_payload.listing_time_ts }}" >> $GITHUB_ENV
-          echo "LISTING_TIME_STR=${{ github.event.client_payload.listing_time_str }}" >> $GITHUB_ENV
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "COIN_SYMBOL=${{ github.event.inputs.symbol }}" >> $GITHUB_ENV
+            echo "LISTING_TIME_TS=${{ github.event.inputs.listing_time_ts }}" >> $GITHUB_ENV
+            echo "LISTING_TIME_STR=${{ github.event.inputs.listing_time_str }}" >> $GITHUB_ENV
+          else
+            echo "COIN_SYMBOL=${{ github.event.client_payload.symbol }}" >> $GITHUB_ENV
+            echo "LISTING_TIME_TS=${{ github.event.client_payload.listing_time_ts }}" >> $GITHUB_ENV
+            echo "LISTING_TIME_STR=${{ github.event.client_payload.listing_time_str }}" >> $GITHUB_ENV
+          fi
 
       - name: 📊 Monitor price
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python scripts/monitor_listing.py
