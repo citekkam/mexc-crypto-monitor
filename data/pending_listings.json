@@ -10,5 +10,11 @@
     "listing_time_ts": 1777284000,
     "listing_time_str": "2026-04-27 10:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "PROS",
+    "listing_time_ts": 1777384800,
+    "listing_time_str": "2026-04-28 14:00 UTC",
+    "monitored": false
   }
 ]
