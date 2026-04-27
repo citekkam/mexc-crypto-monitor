@@ -1,8 +1,9 @@
 """
-MEXC New Listings Scraper - v8
-- Intercepts new_coin_calendar via browser session
-- Saves upcoming listings to data/pending_listings.json (committed to repo)
-- Sends Telegram summary
+MEXC New Listings Scraper - v9
+- Intercepts new_coin_calendar via browser
+- Saves listings to data/pending_listings.json
+- For each NEW listing: triggers monitor workflow via GitHub API (repository_dispatch)
+- Monitor workflow sleeps until exact listing time, then tracks 20 min
 """
 
 import os
@@ -12,12 +13,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 
-MEXC_URL = "https://www.mexc.com/newlisting"
-TARGET_API = "new_coin_calendar"
-TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
-TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
-LISTINGS_FILE = Path("data/pending_listings.json")
+MEXC_URL        = "https://www.mexc.com/newlisting"
+TARGET_API      = "new_coin_calendar"
+LISTINGS_FILE   = Path("data/pending_listings.json")
 
+TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
+TELEGRAM_CHAT_ID   = os.environ["TELEGRAM_CHAT_ID"]
+GITHUB_TOKEN       = os.environ.get("GITHUB_TOKEN", "")
+GITHUB_REPOSITORY  = os.environ.get("GITHUB_REPOSITORY", "")   # "owner/repo"
+
+
+# ─── Browser scrape ───────────────────────────────────────────────────────────
 
 def fetch_listings() -> list[dict]:
     result = {"data": None}
@@ -25,11 +31,11 @@ def fetch_listings() -> list[dict]:
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=True,
-            args=["--no-sandbox", "--disable-setuid-sandbox",
+            args=["--no-sandbox","--disable-setuid-sandbox",
                   "--disable-blink-features=AutomationControlled",
-                  "--disable-dev-shm-usage", "--disable-gpu"],
+                  "--disable-dev-shm-usage","--disable-gpu"],
         )
-        context = browser.new_context(
+        ctx = browser.new_context(
             viewport={"width": 1280, "height": 900},
             user_agent=(
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -38,10 +44,10 @@ def fetch_listings() -> list[dict]:
             ),
             extra_http_headers={"Accept-Language": "en-US,en;q=0.9"},
         )
-        context.add_init_script(
-            "Object.defineProperty(navigator, 'webdriver', { get: () => undefined });"
+        ctx.add_init_script(
+            "Object.defineProperty(navigator,'webdriver',{get:()=>undefined});"
         )
-        page = context.new_page()
+        page = ctx.new_page()
 
         def on_response(response):
             if TARGET_API in response.url and result["data"] is None:
@@ -52,7 +58,6 @@ def fetch_listings() -> list[dict]:
                     print(f"[!] Parse error: {e}")
 
         page.on("response", on_response)
-
         print(f"[*] Loading {MEXC_URL}...")
         try:
             page.goto(MEXC_URL, wait_until="domcontentloaded", timeout=45_000)
@@ -65,13 +70,11 @@ def fetch_listings() -> list[dict]:
                 break
             page.wait_for_timeout(1_000)
         else:
-            print("[!] Timeout - new_coin_calendar never fired")
+            print("[!] Timeout – new_coin_calendar never fired")
 
         browser.close()
 
-    if not result["data"]:
-        return []
-    return parse_listings(result["data"])
+    return parse_listings(result["data"]) if result["data"] else []
 
 
 def parse_listings(data: dict) -> list[dict]:
@@ -80,28 +83,26 @@ def parse_listings(data: dict) -> list[dict]:
 
     def walk(node):
         if isinstance(node, list):
-            for item in node:
-                walk(item)
+            for item in node: walk(item)
         elif isinstance(node, dict):
             symbol = ""
-            for k in ["symbol", "vcoinName", "coinName", "name", "currency", "baseAsset", "coin"]:
+            for k in ["symbol","vcoinName","coinName","name","currency","baseAsset","coin"]:
                 v = node.get(k, "")
                 if v and isinstance(v, str) and 1 < len(v) < 20:
-                    symbol = v.upper().replace("USDT", "").replace("/", "").strip()
+                    symbol = v.upper().replace("USDT","").replace("/","").strip()
                     break
 
             listing_time = None
-            for k in ["firstOpenTime", "openTime", "listingTime", "releaseTime",
-                       "startTime", "tradingTime", "launchTime", "time", "onlineTime",
-                       "tradeStartTime", "saleStartTime", "appointmentStartTime"]:
+            for k in ["firstOpenTime","openTime","listingTime","releaseTime",
+                       "startTime","tradingTime","launchTime","time","onlineTime",
+                       "tradeStartTime","saleStartTime","appointmentStartTime"]:
                 v = node.get(k)
-                if not v:
-                    continue
+                if not v: continue
                 try:
                     ts = int(v)
                     if ts > 1_000_000_000:
                         listing_time = datetime.fromtimestamp(
-                            ts / 1000 if ts > 1e12 else ts, tz=timezone.utc)
+                            ts/1000 if ts > 1e12 else ts, tz=timezone.utc)
                         break
                 except Exception:
                     pass
@@ -115,23 +116,22 @@ def parse_listings(data: dict) -> list[dict]:
                 })
 
             for v in node.values():
-                if isinstance(v, (dict, list)):
-                    walk(v)
+                if isinstance(v, (dict, list)): walk(v)
 
     walk(data)
 
-    # Deduplicate
     seen, unique = set(), []
     for item in listings:
         if item["symbol"] not in seen:
             seen.add(item["symbol"])
             unique.append(item)
-
     return unique
 
 
-def save_listings(listings: list[dict]):
-    """Merge new listings with existing ones in data/pending_listings.json."""
+# ─── Persist & trigger ────────────────────────────────────────────────────────
+
+def save_and_trigger(listings: list[dict]) -> list[dict]:
+    """Merge with existing, return only newly added coins."""
     LISTINGS_FILE.parent.mkdir(exist_ok=True)
     existing = []
     if LISTINGS_FILE.exists():
@@ -141,70 +141,94 @@ def save_listings(listings: list[dict]):
             pass
 
     existing_symbols = {e["symbol"] for e in existing}
-    added = 0
+    new_coins = []
     for item in listings:
         if item["symbol"] not in existing_symbols:
             existing.append(item)
             existing_symbols.add(item["symbol"])
-            added += 1
+            new_coins.append(item)
 
     LISTINGS_FILE.write_text(json.dumps(existing, indent=2))
-    print(f"[+] Saved {len(existing)} total listings ({added} new) to {LISTINGS_FILE}")
-    return added
+    print(f"[+] Saved {len(existing)} total ({len(new_coins)} new)")
+    return new_coins
 
+
+def trigger_monitor(coin: dict):
+    """Fire repository_dispatch so monitor workflow starts immediately."""
+    if not GITHUB_TOKEN or not GITHUB_REPOSITORY:
+        print(f"[!] No GITHUB_TOKEN/REPO – cannot trigger monitor for {coin['symbol']}")
+        return
+
+    owner, repo = GITHUB_REPOSITORY.split("/", 1)
+    url = f"https://api.github.com/repos/{owner}/{repo}/dispatches"
+    payload = {
+        "event_type": "monitor-listing",
+        "client_payload": {
+            "symbol":           coin["symbol"],
+            "listing_time_ts":  coin["listing_time_ts"],
+            "listing_time_str": coin["listing_time_str"],
+        },
+    }
+    r = requests.post(url, json=payload,
+                      headers={"Authorization": f"Bearer {GITHUB_TOKEN}",
+                               "Accept": "application/vnd.github+json"},
+                      timeout=15)
+    if r.status_code == 204:
+        print(f"[+] Monitor workflow triggered for {coin['symbol']}")
+    else:
+        print(f"[!] Dispatch failed {r.status_code}: {r.text[:200]}")
+
+
+# ─── Telegram ─────────────────────────────────────────────────────────────────
 
 def send_telegram(text: str):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    r = requests.post(url, json={
+    requests.post(url, json={
         "chat_id": TELEGRAM_CHAT_ID, "text": text,
         "parse_mode": "HTML", "disable_web_page_preview": True,
-    }, timeout=15)
-    r.raise_for_status()
+    }, timeout=15).raise_for_status()
 
 
 def format_message(listings: list[dict]) -> str:
     now_str = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     if not listings:
-        return (
-            f"🪙 <b>MEXC New Listings</b>\n\n"
-            f"📅 Scan: {now_str}\n"
-            f"📭 No upcoming listings found.\n\n"
-            f'🔗 <a href="{MEXC_URL}">Check manually</a>'
-        )
+        return (f"🪙 <b>MEXC New Listings</b>\n\n📅 Scan: {now_str}\n"
+                f"📭 No upcoming listings found.\n\n"
+                f'🔗 <a href="{MEXC_URL}">Check manually</a>')
     now = datetime.now(tz=timezone.utc)
     listings_sorted = sorted(listings, key=lambda x: x["listing_time_ts"])
-    lines = [
-        "🪙 <b>MEXC New Listings</b>",
-        f"📅 Scan: {now_str}",
-        f"✅ Found: <b>{len(listings)} coins</b>",
-        "", "━━━━━━━━━━━━━━━━━━━━",
-    ]
+    lines = ["🪙 <b>MEXC New Listings</b>", f"📅 Scan: {now_str}",
+             f"✅ Found: <b>{len(listings)} coins</b>", "", "━━━━━━━━━━━━━━━━━━━━"]
     for i, item in enumerate(listings_sorted, 1):
         lt = datetime.fromtimestamp(item["listing_time_ts"], tz=timezone.utc)
         delta = lt - now
         d, rem = delta.days, delta.seconds
         h, m = rem // 3600, (rem % 3600) // 60
         ct = f"{d}d {h}h {m}m" if d > 0 else f"{h}h {m}m" if h > 0 else f"{m}m"
-        lines.append(
-            f"\n{i}. <b>{item['symbol']}</b>\n"
-            f"   🕐 {item['listing_time_str']}\n"
-            f"   ⏳ In: {ct}"
-        )
+        lines.append(f"\n{i}. <b>{item['symbol']}</b>\n"
+                     f"   🕐 {item['listing_time_str']}\n   ⏳ In: {ct}")
     lines += ["\n━━━━━━━━━━━━━━━━━━━━", f'🔗 <a href="{MEXC_URL}">MEXC New Listing</a>']
     return "\n".join(lines)
 
 
+# ─── Main ─────────────────────────────────────────────────────────────────────
+
 def main():
-    print("=" * 50)
-    print("MEXC New Listings Scraper v8")
-    print("=" * 50)
+    print("="*50)
+    print("MEXC New Listings Scraper v9")
+    print("="*50)
 
     listings = fetch_listings()
     print(f"\n[+] Found {len(listings)} upcoming listings:")
     for item in listings:
         print(f"    • {item['symbol']} – {item['listing_time_str']}")
 
-    save_listings(listings)
+    new_coins = save_and_trigger(listings)
+
+    for coin in new_coins:
+        print(f"[*] Triggering monitor for {coin['symbol']}...")
+        trigger_monitor(coin)
+
     send_telegram(format_message(listings))
     print("✅ Done!")
 
