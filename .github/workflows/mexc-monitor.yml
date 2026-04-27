@@ -2,14 +2,14 @@ name: 📊 MEXC Listing Price Monitor
 
 on:
   repository_dispatch:
-    types: [monitor-listing]    # triggered automatically by scraper
-  workflow_dispatch:            # allow manual trigger for testing
+    types: [monitor-listing]
+  workflow_dispatch:
     inputs:
       symbol:
         description: 'Coin symbol (e.g. BTC)'
         required: true
       listing_time_ts:
-        description: 'Listing Unix timestamp'
+        description: 'Unix timestamp of listing'
         required: true
       listing_time_str:
         description: 'Human readable time (e.g. 2026-04-28 10:00 UTC)'
@@ -18,26 +18,23 @@ on:
 jobs:
   monitor:
     runs-on: ubuntu-latest
-    timeout-minutes: 60    # up to 60min: sleep + 20min monitoring + overhead
+    timeout-minutes: 60
 
     steps:
-      - name: 📥 Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: 🐍 Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: 📦 Install dependencies
+      - name: 📦 Install deps
         run: pip install requests
 
       - name: 📊 Monitor price
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
-          # repository_dispatch payload
-          COIN_SYMBOL:        ${{ github.event.client_payload.symbol        || inputs.symbol }}
-          LISTING_TIME_TS:    ${{ github.event.client_payload.listing_time_ts || inputs.listing_time_ts }}
-          LISTING_TIME_STR:   ${{ github.event.client_payload.listing_time_str || inputs.listing_time_str }}
+          COIN_SYMBOL:       ${{ github.event.client_payload.symbol        || inputs.symbol }}
+          LISTING_TIME_TS:   ${{ github.event.client_payload.listing_time_ts || inputs.listing_time_ts }}
+          LISTING_TIME_STR:  ${{ github.event.client_payload.listing_time_str || inputs.listing_time_str }}
         run: python scripts/monitor_listing.py
