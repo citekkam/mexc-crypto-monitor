@@ -1,9 +1,6 @@
 """
-MEXC New Listings Scraper - v9
-- Intercepts new_coin_calendar via browser
-- Saves listings to data/pending_listings.json
-- For each NEW listing: triggers monitor workflow via GitHub API (repository_dispatch)
-- Monitor workflow sleeps until exact listing time, then tracks 20 min
+MEXC New Listings Scraper - v10
+Uses PAT (GH_PAT secret) for repository_dispatch — GITHUB_TOKEN cannot trigger workflows.
 """
 
 import os
@@ -19,11 +16,9 @@ LISTINGS_FILE   = Path("data/pending_listings.json")
 
 TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 TELEGRAM_CHAT_ID   = os.environ["TELEGRAM_CHAT_ID"]
-GITHUB_TOKEN       = os.environ.get("GITHUB_TOKEN", "")
-GITHUB_REPOSITORY  = os.environ.get("GITHUB_REPOSITORY", "")   # "owner/repo"
+GH_PAT             = os.environ.get("GH_PAT", "")        # Personal Access Token
+GITHUB_REPOSITORY  = os.environ.get("GITHUB_REPOSITORY", "")
 
-
-# ─── Browser scrape ───────────────────────────────────────────────────────────
 
 def fetch_listings() -> list[dict]:
     result = {"data": None}
@@ -119,7 +114,6 @@ def parse_listings(data: dict) -> list[dict]:
                 if isinstance(v, (dict, list)): walk(v)
 
     walk(data)
-
     seen, unique = set(), []
     for item in listings:
         if item["symbol"] not in seen:
@@ -128,10 +122,7 @@ def parse_listings(data: dict) -> list[dict]:
     return unique
 
 
-# ─── Persist & trigger ────────────────────────────────────────────────────────
-
-def save_and_trigger(listings: list[dict]) -> list[dict]:
-    """Merge with existing, return only newly added coins."""
+def save_listings(listings: list[dict]) -> list[dict]:
     LISTINGS_FILE.parent.mkdir(exist_ok=True)
     existing = []
     if LISTINGS_FILE.exists():
@@ -154,9 +145,13 @@ def save_and_trigger(listings: list[dict]) -> list[dict]:
 
 
 def trigger_monitor(coin: dict):
-    """Fire repository_dispatch so monitor workflow starts immediately."""
-    if not GITHUB_TOKEN or not GITHUB_REPOSITORY:
-        print(f"[!] No GITHUB_TOKEN/REPO – cannot trigger monitor for {coin['symbol']}")
+    """Trigger monitor workflow using PAT — GITHUB_TOKEN cannot do this."""
+    if not GH_PAT:
+        print(f"[!] GH_PAT secret missing — cannot auto-trigger monitor for {coin['symbol']}")
+        print(f"[!] Add a PAT with 'repo' scope as secret GH_PAT in repo settings")
+        return
+    if not GITHUB_REPOSITORY:
+        print(f"[!] GITHUB_REPOSITORY env not set")
         return
 
     owner, repo = GITHUB_REPOSITORY.split("/", 1)
@@ -169,17 +164,20 @@ def trigger_monitor(coin: dict):
             "listing_time_str": coin["listing_time_str"],
         },
     }
-    r = requests.post(url, json=payload,
-                      headers={"Authorization": f"Bearer {GITHUB_TOKEN}",
-                               "Accept": "application/vnd.github+json"},
-                      timeout=15)
+    r = requests.post(
+        url, json=payload,
+        headers={
+            "Authorization": f"Bearer {GH_PAT}",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+        },
+        timeout=15,
+    )
     if r.status_code == 204:
-        print(f"[+] Monitor workflow triggered for {coin['symbol']}")
+        print(f"[+] ✅ Monitor workflow triggered for {coin['symbol']}")
     else:
-        print(f"[!] Dispatch failed {r.status_code}: {r.text[:200]}")
+        print(f"[!] Dispatch failed {r.status_code}: {r.text[:300]}")
 
-
-# ─── Telegram ─────────────────────────────────────────────────────────────────
 
 def send_telegram(text: str):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -196,10 +194,9 @@ def format_message(listings: list[dict]) -> str:
                 f"📭 No upcoming listings found.\n\n"
                 f'🔗 <a href="{MEXC_URL}">Check manually</a>')
     now = datetime.now(tz=timezone.utc)
-    listings_sorted = sorted(listings, key=lambda x: x["listing_time_ts"])
     lines = ["🪙 <b>MEXC New Listings</b>", f"📅 Scan: {now_str}",
              f"✅ Found: <b>{len(listings)} coins</b>", "", "━━━━━━━━━━━━━━━━━━━━"]
-    for i, item in enumerate(listings_sorted, 1):
+    for i, item in enumerate(sorted(listings, key=lambda x: x["listing_time_ts"]), 1):
         lt = datetime.fromtimestamp(item["listing_time_ts"], tz=timezone.utc)
         delta = lt - now
         d, rem = delta.days, delta.seconds
@@ -211,11 +208,9 @@ def format_message(listings: list[dict]) -> str:
     return "\n".join(lines)
 
 
-# ─── Main ─────────────────────────────────────────────────────────────────────
-
 def main():
     print("="*50)
-    print("MEXC New Listings Scraper v9")
+    print("MEXC New Listings Scraper v10")
     print("="*50)
 
     listings = fetch_listings()
@@ -223,10 +218,10 @@ def main():
     for item in listings:
         print(f"    • {item['symbol']} – {item['listing_time_str']}")
 
-    new_coins = save_and_trigger(listings)
+    new_coins = save_listings(listings)
 
     for coin in new_coins:
-        print(f"[*] Triggering monitor for {coin['symbol']}...")
+        print(f"[*] Triggering monitor for {coin['symbol']} (lists at {coin['listing_time_str']})...")
         trigger_monitor(coin)
 
     send_telegram(format_message(listings))
