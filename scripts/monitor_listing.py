@@ -1,238 +1,144 @@
 """
-MEXC Listing Price Monitor
-- Runs every 5 minutes via GitHub Actions
-- Checks data/pending_listings.json for coins that just listed (within last 6 min)
-- Monitors price every 30s for 20 minutes
-- Sends Telegram report with max gain, chart link, and price history
+MEXC Listing Price Monitor - v2
+Triggered by repository_dispatch from scraper.
+Receives symbol + listing_time_ts as env vars.
+Sleeps until exact listing time, then polls price every 30s for 20 min.
 """
 
 import os
-import json
 import time
 import requests
 from datetime import datetime, timezone
-from pathlib import Path
 
-MEXC_URL = "https://www.mexc.com/newlisting"
-LISTINGS_FILE = Path("data/pending_listings.json")
+SYMBOL           = os.environ["COIN_SYMBOL"]
+LISTING_TIME_TS  = int(os.environ["LISTING_TIME_TS"])
+LISTING_TIME_STR = os.environ.get("LISTING_TIME_STR", "")
 TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
-TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
+TELEGRAM_CHAT_ID   = os.environ["TELEGRAM_CHAT_ID"]
 
-MONITOR_DURATION_SEC = 20 * 60   # 20 minutes
-POLL_INTERVAL_SEC = 30            # check price every 30 seconds
-TRIGGER_WINDOW_SEC = 6 * 60      # consider coins listed in last 6 min (covers cron drift)
-
-MEXC_PRICE_API = "https://api.mexc.com/api/v3/ticker/price"
-MEXC_KLINES_API = "https://api.mexc.com/api/v3/klines"
+MEXC_CHART_URL   = f"https://www.mexc.com/exchange/{SYMBOL}_USDT"
+PRICE_API        = "https://api.mexc.com/api/v3/ticker/price"
+MONITOR_SECS     = 20 * 60   # 20 minutes
+POLL_SECS        = 30
 
 
-# ─── Price fetching ───────────────────────────────────────────────────────────
+# ─── Price ────────────────────────────────────────────────────────────────────
 
-def get_price(symbol: str) -> float | None:
-    """Get current price from MEXC public API."""
+def get_price() -> float | None:
     try:
-        r = requests.get(
-            MEXC_PRICE_API,
-            params={"symbol": f"{symbol}USDT"},
-            timeout=10,
-        )
+        r = requests.get(PRICE_API, params={"symbol": f"{SYMBOL}USDT"}, timeout=10)
         if r.status_code == 200:
-            data = r.json()
-            return float(data["price"])
-    except Exception as e:
-        print(f"[!] Price fetch error for {symbol}: {e}")
+            return float(r.json()["price"])
+    except Exception:
+        pass
     return None
 
 
-def get_initial_price(symbol: str, retries: int = 10) -> float | None:
-    """Wait up to ~50s for the trading pair to become available."""
-    for attempt in range(retries):
-        price = get_price(symbol)
-        if price and price > 0:
-            return price
-        print(f"[*] {symbol} not yet tradeable, waiting... ({attempt+1}/{retries})")
-        time.sleep(5)
+def wait_for_price(retries: int = 20) -> float | None:
+    """Wait up to ~2 min for trading pair to become available."""
+    for i in range(retries):
+        p = get_price()
+        if p and p > 0:
+            return p
+        print(f"[*] Pair not yet available ({i+1}/{retries}), waiting 6s...")
+        time.sleep(6)
     return None
-
-
-# ─── Core monitor ─────────────────────────────────────────────────────────────
-
-def monitor_coin(symbol: str, listing_time_str: str) -> dict:
-    """Monitor coin price for 20 minutes, return stats."""
-    print(f"\n{'='*50}")
-    print(f"[*] Monitoring {symbol} for 20 minutes...")
-    print(f"{'='*50}")
-
-    initial_price = get_initial_price(symbol)
-    if not initial_price:
-        print(f"[!] Could not get initial price for {symbol}")
-        return {"symbol": symbol, "error": "Price not available at launch"}
-
-    print(f"[+] Initial price: ${initial_price:.8f}")
-
-    prices = [initial_price]
-    timestamps = [datetime.now(tz=timezone.utc)]
-    max_price = initial_price
-    min_price = initial_price
-    checks = MONITOR_DURATION_SEC // POLL_INTERVAL_SEC
-
-    for i in range(checks):
-        time.sleep(POLL_INTERVAL_SEC)
-        price = get_price(symbol)
-        if price:
-            prices.append(price)
-            timestamps.append(datetime.now(tz=timezone.utc))
-            max_price = max(max_price, price)
-            min_price = min(min_price, price)
-            elapsed_min = (i + 1) * POLL_INTERVAL_SEC // 60
-            pct = (price - initial_price) / initial_price * 100
-            print(f"  [{elapsed_min:2d}min] ${price:.8f}  ({pct:+.1f}%)")
-
-    max_gain_pct = (max_price - initial_price) / initial_price * 100
-    max_drop_pct = (min_price - initial_price) / initial_price * 100
-    final_price = prices[-1] if prices else initial_price
-    final_pct = (final_price - initial_price) / initial_price * 100
-
-    return {
-        "symbol": symbol,
-        "listing_time_str": listing_time_str,
-        "initial_price": initial_price,
-        "max_price": max_price,
-        "min_price": min_price,
-        "final_price": final_price,
-        "max_gain_pct": max_gain_pct,
-        "max_drop_pct": max_drop_pct,
-        "final_pct": final_pct,
-        "num_samples": len(prices),
-        "chart_url": f"https://www.mexc.com/exchange/{symbol}_USDT",
-    }
 
 
 # ─── Telegram ─────────────────────────────────────────────────────────────────
 
 def send_telegram(text: str):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    r = requests.post(url, json={
+    requests.post(url, json={
         "chat_id": TELEGRAM_CHAT_ID, "text": text,
         "parse_mode": "HTML", "disable_web_page_preview": False,
-    }, timeout=15)
-    r.raise_for_status()
+    }, timeout=15).raise_for_status()
 
 
-def format_monitor_result(result: dict) -> str:
-    if "error" in result:
-        return (
-            f"⚠️ <b>{result['symbol']} – Monitor Error</b>\n\n"
-            f"{result['error']}"
-        )
+def fmt_price(p: float) -> str:
+    if p < 0.000001:  return f"${p:.10f}"
+    if p < 0.001:     return f"${p:.8f}"
+    if p < 1:         return f"${p:.6f}"
+    return f"${p:.4f}"
 
-    symbol = result["symbol"]
-    ip = result["initial_price"]
-    max_g = result["max_gain_pct"]
-    max_d = result["max_drop_pct"]
-    final = result["final_pct"]
 
-    # Emoji based on performance
-    if max_g >= 100:
-        perf_emoji = "🚀🚀🚀"
-    elif max_g >= 50:
-        perf_emoji = "🚀🚀"
-    elif max_g >= 20:
-        perf_emoji = "🚀"
-    elif max_g >= 5:
-        perf_emoji = "📈"
-    elif max_g >= 0:
-        perf_emoji = "➡️"
-    else:
-        perf_emoji = "📉"
+def format_result(ip, max_p, min_p, final_p) -> str:
+    max_g  = (max_p  - ip) / ip * 100
+    max_d  = (min_p  - ip) / ip * 100
+    final  = (final_p - ip) / ip * 100
 
-    def fmt_price(p):
-        if p < 0.000001:
-            return f"${p:.10f}"
-        elif p < 0.001:
-            return f"${p:.8f}"
-        elif p < 1:
-            return f"${p:.6f}"
-        else:
-            return f"${p:.4f}"
+    emoji = "🚀🚀🚀" if max_g >= 100 else "🚀🚀" if max_g >= 50 else \
+            "🚀"    if max_g >= 20  else "📈"   if max_g >= 5  else \
+            "➡️"    if max_g >= 0   else "📉"
 
     return (
-        f"{perf_emoji} <b>{symbol}/USDT – 20min Report</b>\n\n"
-        f"📅 Listed: {result.get('listing_time_str', 'N/A')}\n\n"
+        f"{emoji} <b>{SYMBOL}/USDT – 20min Report</b>\n\n"
+        f"📅 Listed: {LISTING_TIME_STR}\n\n"
         f"💰 <b>Ceny:</b>\n"
         f"   Open:  {fmt_price(ip)}\n"
-        f"   Max:   {fmt_price(result['max_price'])}  (<b>+{max_g:.1f}%</b>)\n"
-        f"   Min:   {fmt_price(result['min_price'])}  ({max_d:.1f}%)\n"
-        f"   Close: {fmt_price(result['final_price'])}  ({final:+.1f}%)\n\n"
-        f"📊 <b>Max zhodnocení za 20 min: {max_g:.1f}%</b>\n\n"
-        f'🔗 <a href="{result["chart_url"]}">Otevřít graf {symbol}/USDT</a>'
+        f"   Max:   {fmt_price(max_p)}  (<b>{max_g:+.1f}%</b>)\n"
+        f"   Min:   {fmt_price(min_p)}  ({max_d:+.1f}%)\n"
+        f"   Close: {fmt_price(final_p)}  ({final:+.1f}%)\n\n"
+        f"📊 <b>Max zhodnocení za 20 min: {max_g:+.1f}%</b>\n\n"
+        f'🔗 <a href="{MEXC_CHART_URL}">Graf {SYMBOL}/USDT</a>'
     )
 
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
-    print("=" * 50)
-    print("MEXC Listing Monitor")
-    print(f"Time: {datetime.now(tz=timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}")
-    print("=" * 50)
-
-    if not LISTINGS_FILE.exists():
-        print("[*] No listings file found, nothing to monitor")
-        return
-
-    listings = json.loads(LISTINGS_FILE.read_text())
     now_ts = int(datetime.now(tz=timezone.utc).timestamp())
+    sleep_secs = LISTING_TIME_TS - now_ts
 
-    # Find coins that listed within the last TRIGGER_WINDOW_SEC and haven't been monitored
-    to_monitor = [
-        item for item in listings
-        if not item.get("monitored", False)
-        and 0 <= (now_ts - item["listing_time_ts"]) <= TRIGGER_WINDOW_SEC
-    ]
+    print("="*50)
+    print(f"MEXC Monitor – {SYMBOL}")
+    print(f"Listing: {LISTING_TIME_STR}")
+    print("="*50)
 
-    if not to_monitor:
-        print("[*] No coins to monitor right now")
-        # Show upcoming
-        upcoming = [
-            item for item in listings
-            if not item.get("monitored", False) and item["listing_time_ts"] > now_ts
-        ]
-        if upcoming:
-            next_coin = min(upcoming, key=lambda x: x["listing_time_ts"])
-            mins_until = (next_coin["listing_time_ts"] - now_ts) // 60
-            print(f"[*] Next listing: {next_coin['symbol']} in {mins_until} min")
+    if sleep_secs > 0:
+        print(f"[*] Sleeping {sleep_secs}s until listing time...")
+        time.sleep(sleep_secs)
+    else:
+        print(f"[*] Listing time already passed by {-sleep_secs}s, starting now")
+
+    print(f"\n[*] {SYMBOL} listing time reached!")
+
+    # Notify Telegram that monitoring started
+    send_telegram(
+        f"🔔 <b>{SYMBOL} právě listoval na MEXC!</b>\n\n"
+        f"📊 Spouštím 20min monitoring ceny...\n"
+        f'🔗 <a href="{MEXC_CHART_URL}">Graf {SYMBOL}/USDT</a>'
+    )
+
+    # Wait for pair to be tradeable
+    initial_price = wait_for_price()
+    if not initial_price:
+        send_telegram(f"⚠️ <b>{SYMBOL}</b> – cena nedostupná ani po 2 minutách od listingu.")
         return
 
-    print(f"[+] Found {len(to_monitor)} coin(s) to monitor: {[c['symbol'] for c in to_monitor]}")
+    print(f"[+] Initial price: {fmt_price(initial_price)}")
 
-    # Send Telegram alert that monitoring started
-    for coin in to_monitor:
-        send_telegram(
-            f"🔔 <b>{coin['symbol']} právě listoval na MEXC!</b>\n\n"
-            f"📊 Spouštím 20min monitoring ceny...\n"
-            f'🔗 <a href="https://www.mexc.com/exchange/{coin["symbol"]}_USDT">'
-            f"Graf {coin['symbol']}/USDT</a>"
-        )
+    # Monitor loop
+    prices = [initial_price]
+    steps  = MONITOR_SECS // POLL_SECS
 
-    # Monitor each coin and collect results
-    results = []
-    for coin in to_monitor:
-        result = monitor_coin(coin["symbol"], coin["listing_time_str"])
-        results.append(result)
+    for i in range(steps):
+        time.sleep(POLL_SECS)
+        p = get_price()
+        if p:
+            prices.append(p)
+            elapsed = (i + 1) * POLL_SECS // 60
+            pct = (p - initial_price) / initial_price * 100
+            print(f"  [{elapsed:2d}min] {fmt_price(p)}  ({pct:+.1f}%)")
 
-        # Mark as monitored in the file
-        for item in listings:
-            if item["symbol"] == coin["symbol"]:
-                item["monitored"] = True
-                item["monitor_result"] = result
-        LISTINGS_FILE.write_text(json.dumps(listings, indent=2))
+    max_p   = max(prices)
+    min_p   = min(prices)
+    final_p = prices[-1]
 
-        # Send result to Telegram
-        send_telegram(format_monitor_result(result))
-        print(f"[+] Sent result for {coin['symbol']} to Telegram")
-
-    print(f"\n✅ Monitoring complete for {len(results)} coin(s)")
+    msg = format_result(initial_price, max_p, min_p, final_p)
+    print(f"\n{msg}")
+    send_telegram(msg)
+    print("✅ Done!")
 
 
 if __name__ == "__main__":
