@@ -16,5 +16,17 @@
     "listing_time_ts": 1777384800,
     "listing_time_str": "2026-04-28 14:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "SPC",
+    "listing_time_ts": 1777471200,
+    "listing_time_str": "2026-04-29 14:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "USDGO",
+    "listing_time_ts": 1777456800,
+    "listing_time_str": "2026-04-29 10:00 UTC",
+    "monitored": false
   }
 ]
