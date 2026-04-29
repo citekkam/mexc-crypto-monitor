@@ -34,5 +34,17 @@
     "listing_time_ts": 1777543200,
     "listing_time_str": "2026-04-30 10:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "ASSET",
+    "listing_time_ts": 1777561200,
+    "listing_time_str": "2026-04-30 15:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "MEGA",
+    "listing_time_ts": 1777546800,
+    "listing_time_str": "2026-04-30 11:00 UTC",
+    "monitored": false
   }
 ]
