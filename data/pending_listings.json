@@ -28,5 +28,11 @@
     "listing_time_ts": 1777456800,
     "listing_time_str": "2026-04-29 10:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "QONE",
+    "listing_time_ts": 1777543200,
+    "listing_time_str": "2026-04-30 10:00 UTC",
+    "monitored": false
   }
 ]
