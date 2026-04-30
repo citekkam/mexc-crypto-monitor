@@ -46,5 +46,11 @@
     "listing_time_ts": 1777546800,
     "listing_time_str": "2026-04-30 11:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "KUVI",
+    "listing_time_ts": 1777644000,
+    "listing_time_str": "2026-05-01 14:00 UTC",
+    "monitored": false
   }
 ]
