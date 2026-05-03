@@ -52,5 +52,11 @@
     "listing_time_ts": 1777644000,
     "listing_time_str": "2026-05-01 14:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "BILL",
+    "listing_time_ts": 1777888800,
+    "listing_time_str": "2026-05-04 10:00 UTC",
+    "monitored": false
   }
 ]
