@@ -58,5 +58,11 @@
     "listing_time_ts": 1777888800,
     "listing_time_str": "2026-05-04 10:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "SN85",
+    "listing_time_ts": 1778061600,
+    "listing_time_str": "2026-05-06 10:00 UTC",
+    "monitored": false
   }
 ]
