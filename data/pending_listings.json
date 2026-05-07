@@ -70,5 +70,11 @@
     "listing_time_ts": 1778227200,
     "listing_time_str": "2026-05-08 08:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "SHARE",
+    "listing_time_ts": 1778234400,
+    "listing_time_str": "2026-05-08 10:00 UTC",
+    "monitored": false
   }
 ]
