@@ -64,5 +64,11 @@
     "listing_time_ts": 1778061600,
     "listing_time_str": "2026-05-06 10:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "BSA",
+    "listing_time_ts": 1778227200,
+    "listing_time_str": "2026-05-08 08:00 UTC",
+    "monitored": false
   }
 ]
