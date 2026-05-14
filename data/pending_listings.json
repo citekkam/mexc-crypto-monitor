@@ -82,5 +82,11 @@
     "listing_time_ts": 1778580000,
     "listing_time_str": "2026-05-12 10:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "UBOX",
+    "listing_time_ts": 1778835600,
+    "listing_time_str": "2026-05-15 09:00 UTC",
+    "monitored": false
   }
 ]
