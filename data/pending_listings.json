@@ -88,5 +88,17 @@
     "listing_time_ts": 1778835600,
     "listing_time_str": "2026-05-15 09:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "BOBO",
+    "listing_time_ts": 1779091200,
+    "listing_time_str": "2026-05-18 08:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "DVERSE",
+    "listing_time_ts": 1778925600,
+    "listing_time_str": "2026-05-16 10:00 UTC",
+    "monitored": false
   }
 ]
