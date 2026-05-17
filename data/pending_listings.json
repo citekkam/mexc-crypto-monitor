@@ -106,5 +106,11 @@
     "listing_time_ts": 1779094800,
     "listing_time_str": "2026-05-18 09:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "ATWO",
+    "listing_time_ts": 1779105600,
+    "listing_time_str": "2026-05-18 12:00 UTC",
+    "monitored": false
   }
 ]
