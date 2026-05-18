@@ -112,5 +112,11 @@
     "listing_time_ts": 1779105600,
     "listing_time_str": "2026-05-18 12:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "ME3",
+    "listing_time_ts": 1779181200,
+    "listing_time_str": "2026-05-19 09:00 UTC",
+    "monitored": false
   }
 ]
