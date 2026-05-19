@@ -118,5 +118,17 @@
     "listing_time_ts": 1779181200,
     "listing_time_str": "2026-05-19 09:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "XT",
+    "listing_time_ts": 1779271200,
+    "listing_time_str": "2026-05-20 10:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "ZEST",
+    "listing_time_ts": 1779195600,
+    "listing_time_str": "2026-05-19 13:00 UTC",
+    "monitored": false
   }
 ]
