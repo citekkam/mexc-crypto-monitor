@@ -130,5 +130,17 @@
     "listing_time_ts": 1779195600,
     "listing_time_str": "2026-05-19 13:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "SENS",
+    "listing_time_ts": 1779354000,
+    "listing_time_str": "2026-05-21 09:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "NEX",
+    "listing_time_ts": 1779289200,
+    "listing_time_str": "2026-05-20 15:00 UTC",
+    "monitored": false
   }
 ]
