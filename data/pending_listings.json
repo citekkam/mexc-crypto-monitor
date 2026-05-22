@@ -142,5 +142,11 @@
     "listing_time_ts": 1779289200,
     "listing_time_str": "2026-05-20 15:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "KSKD",
+    "listing_time_ts": 1779710400,
+    "listing_time_str": "2026-05-25 12:00 UTC",
+    "monitored": false
   }
 ]
