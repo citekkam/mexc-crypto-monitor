@@ -160,5 +160,11 @@
     "listing_time_ts": 1779717600,
     "listing_time_str": "2026-05-25 14:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "AORA",
+    "listing_time_ts": 1779800400,
+    "listing_time_str": "2026-05-26 13:00 UTC",
+    "monitored": false
   }
 ]
