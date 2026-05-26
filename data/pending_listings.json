@@ -166,5 +166,17 @@
     "listing_time_ts": 1779800400,
     "listing_time_str": "2026-05-26 13:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "DROPEE",
+    "listing_time_ts": 1779894000,
+    "listing_time_str": "2026-05-27 15:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "DEUS",
+    "listing_time_ts": 1779886800,
+    "listing_time_str": "2026-05-27 13:00 UTC",
+    "monitored": false
   }
 ]
