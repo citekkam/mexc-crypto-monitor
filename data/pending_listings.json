@@ -178,5 +178,17 @@
     "listing_time_ts": 1779886800,
     "listing_time_str": "2026-05-27 13:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "CLAW",
+    "listing_time_ts": 1779962400,
+    "listing_time_str": "2026-05-28 10:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "WALLI",
+    "listing_time_ts": 1779951600,
+    "listing_time_str": "2026-05-28 07:00 UTC",
+    "monitored": false
   }
 ]
