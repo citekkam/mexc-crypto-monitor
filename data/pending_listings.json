@@ -190,5 +190,11 @@
     "listing_time_ts": 1779951600,
     "listing_time_str": "2026-05-28 07:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "ANVL",
+    "listing_time_ts": 1779980400,
+    "listing_time_str": "2026-05-28 15:00 UTC",
+    "monitored": false
   }
 ]
