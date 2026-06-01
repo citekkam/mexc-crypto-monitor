@@ -202,5 +202,11 @@
     "listing_time_ts": 1779973200,
     "listing_time_str": "2026-05-28 13:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "SINGULARRY",
+    "listing_time_ts": 1780405200,
+    "listing_time_str": "2026-06-02 13:00 UTC",
+    "monitored": false
   }
 ]
