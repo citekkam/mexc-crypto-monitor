@@ -208,5 +208,11 @@
     "listing_time_ts": 1780405200,
     "listing_time_str": "2026-06-02 13:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "TEA",
+    "listing_time_ts": 1780531200,
+    "listing_time_str": "2026-06-04 00:00 UTC",
+    "monitored": false
   }
 ]
