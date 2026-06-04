@@ -220,5 +220,11 @@
     "listing_time_ts": 1780653600,
     "listing_time_str": "2026-06-05 10:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "UMXM",
+    "listing_time_ts": 1780660800,
+    "listing_time_str": "2026-06-05 12:00 UTC",
+    "monitored": false
   }
 ]
