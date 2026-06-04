@@ -214,5 +214,11 @@
     "listing_time_ts": 1780531200,
     "listing_time_str": "2026-06-04 00:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "YOM",
+    "listing_time_ts": 1780653600,
+    "listing_time_str": "2026-06-05 10:00 UTC",
+    "monitored": false
   }
 ]
