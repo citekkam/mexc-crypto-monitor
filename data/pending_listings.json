@@ -238,5 +238,11 @@
     "listing_time_ts": 1781190000,
     "listing_time_str": "2026-06-11 15:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "SPCXX",
+    "listing_time_ts": 1781276400,
+    "listing_time_str": "2026-06-12 15:00 UTC",
+    "monitored": false
   }
 ]
