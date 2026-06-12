@@ -244,5 +244,11 @@
     "listing_time_ts": 1781276400,
     "listing_time_str": "2026-06-12 15:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "LVR",
+    "listing_time_ts": 1781337600,
+    "listing_time_str": "2026-06-13 08:00 UTC",
+    "monitored": false
   }
 ]
