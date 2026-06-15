@@ -262,5 +262,11 @@
     "listing_time_ts": 1781499600,
     "listing_time_str": "2026-06-15 05:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "SHOT",
+    "listing_time_ts": 1781604000,
+    "listing_time_str": "2026-06-16 10:00 UTC",
+    "monitored": false
   }
 ]
