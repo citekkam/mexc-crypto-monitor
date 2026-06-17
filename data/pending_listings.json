@@ -268,5 +268,11 @@
     "listing_time_ts": 1781604000,
     "listing_time_str": "2026-06-16 10:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "KAZAR",
+    "listing_time_ts": 1781773200,
+    "listing_time_str": "2026-06-18 09:00 UTC",
+    "monitored": false
   }
 ]
