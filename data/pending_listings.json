@@ -274,5 +274,65 @@
     "listing_time_ts": 1781773200,
     "listing_time_str": "2026-06-18 09:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "AAOION",
+    "listing_time_ts": 1781787600,
+    "listing_time_str": "2026-06-18 13:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "AMKRON",
+    "listing_time_ts": 1781787600,
+    "listing_time_str": "2026-06-18 13:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "CBRSON",
+    "listing_time_ts": 1781787600,
+    "listing_time_str": "2026-06-18 13:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "PLON",
+    "listing_time_ts": 1781787600,
+    "listing_time_str": "2026-06-18 13:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "UMCON",
+    "listing_time_ts": 1781787600,
+    "listing_time_str": "2026-06-18 13:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "DELLON",
+    "listing_time_ts": 1781784000,
+    "listing_time_str": "2026-06-18 12:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "GLWON",
+    "listing_time_ts": 1781784000,
+    "listing_time_str": "2026-06-18 12:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "LITEON",
+    "listing_time_ts": 1781784000,
+    "listing_time_str": "2026-06-18 12:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "NOKON",
+    "listing_time_ts": 1781784000,
+    "listing_time_str": "2026-06-18 12:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "RE",
+    "listing_time_ts": 1781784000,
+    "listing_time_str": "2026-06-18 12:00 UTC",
+    "monitored": false
   }
 ]
