@@ -334,5 +334,11 @@
     "listing_time_ts": 1781784000,
     "listing_time_str": "2026-06-18 12:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "LUCKY",
+    "listing_time_ts": 1781874000,
+    "listing_time_str": "2026-06-19 13:00 UTC",
+    "monitored": false
   }
 ]
