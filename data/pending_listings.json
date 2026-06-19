@@ -340,5 +340,11 @@
     "listing_time_ts": 1781874000,
     "listing_time_str": "2026-06-19 13:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "PERM",
+    "listing_time_ts": 1781949600,
+    "listing_time_str": "2026-06-20 10:00 UTC",
+    "monitored": false
   }
 ]
