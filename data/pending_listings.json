@@ -346,5 +346,11 @@
     "listing_time_ts": 1781949600,
     "listing_time_str": "2026-06-20 10:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "ZYLO",
+    "listing_time_ts": 1782216000,
+    "listing_time_str": "2026-06-23 12:00 UTC",
+    "monitored": false
   }
 ]
