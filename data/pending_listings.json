@@ -364,5 +364,11 @@
     "listing_time_ts": 1782302400,
     "listing_time_str": "2026-06-24 12:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "ASE",
+    "listing_time_ts": 1782399600,
+    "listing_time_str": "2026-06-25 15:00 UTC",
+    "monitored": false
   }
 ]
