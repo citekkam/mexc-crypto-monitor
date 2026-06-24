@@ -352,5 +352,17 @@
     "listing_time_ts": 1782216000,
     "listing_time_str": "2026-06-23 12:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "SYRT",
+    "listing_time_ts": 1782378000,
+    "listing_time_str": "2026-06-25 09:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "NES",
+    "listing_time_ts": 1782302400,
+    "listing_time_str": "2026-06-24 12:00 UTC",
+    "monitored": false
   }
 ]
