@@ -370,5 +370,35 @@
     "listing_time_ts": 1782399600,
     "listing_time_str": "2026-06-25 15:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "CCJON",
+    "listing_time_ts": 1782388800,
+    "listing_time_str": "2026-06-25 12:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "KEELON",
+    "listing_time_ts": 1782388800,
+    "listing_time_str": "2026-06-25 12:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "RMBSON",
+    "listing_time_ts": 1782388800,
+    "listing_time_str": "2026-06-25 12:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "SYMON",
+    "listing_time_ts": 1782388800,
+    "listing_time_str": "2026-06-25 12:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "TTMION",
+    "listing_time_ts": 1782388800,
+    "listing_time_str": "2026-06-25 12:00 UTC",
+    "monitored": false
   }
 ]
