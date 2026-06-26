@@ -400,5 +400,11 @@
     "listing_time_ts": 1782388800,
     "listing_time_str": "2026-06-25 12:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "CAP",
+    "listing_time_ts": 1782475200,
+    "listing_time_str": "2026-06-26 12:00 UTC",
+    "monitored": false
   }
 ]
