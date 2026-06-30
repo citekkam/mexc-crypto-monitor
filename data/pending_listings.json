@@ -412,5 +412,11 @@
     "listing_time_ts": 1782723600,
     "listing_time_str": "2026-06-29 09:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "STRCON",
+    "listing_time_ts": 1782828000,
+    "listing_time_str": "2026-06-30 14:00 UTC",
+    "monitored": false
   }
 ]
