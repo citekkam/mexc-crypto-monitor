@@ -418,5 +418,11 @@
     "listing_time_ts": 1782828000,
     "listing_time_str": "2026-06-30 14:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "TOFU",
+    "listing_time_ts": 1783418400,
+    "listing_time_str": "2026-07-07 10:00 UTC",
+    "monitored": false
   }
 ]
