@@ -424,5 +424,17 @@
     "listing_time_ts": 1783418400,
     "listing_time_str": "2026-07-07 10:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "ANTFUN",
+    "listing_time_ts": 1783504800,
+    "listing_time_str": "2026-07-08 10:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "GROVE",
+    "listing_time_ts": 1783436400,
+    "listing_time_str": "2026-07-07 15:00 UTC",
+    "monitored": false
   }
 ]
