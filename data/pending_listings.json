@@ -436,5 +436,59 @@
     "listing_time_ts": 1783436400,
     "listing_time_str": "2026-07-07 15:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "ALABON",
+    "listing_time_ts": 1783515600,
+    "listing_time_str": "2026-07-08 13:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "DRAMON",
+    "listing_time_ts": 1783515600,
+    "listing_time_str": "2026-07-08 13:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "FCELON",
+    "listing_time_ts": 1783515600,
+    "listing_time_str": "2026-07-08 13:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "INODON",
+    "listing_time_ts": 1783515600,
+    "listing_time_str": "2026-07-08 13:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "KEYSON",
+    "listing_time_ts": 1783515600,
+    "listing_time_str": "2026-07-08 13:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "BEON",
+    "listing_time_ts": 1783512000,
+    "listing_time_str": "2026-07-08 12:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "CIENON",
+    "listing_time_ts": 1783512000,
+    "listing_time_str": "2026-07-08 12:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "CLSON",
+    "listing_time_ts": 1783512000,
+    "listing_time_str": "2026-07-08 12:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "CRDOON",
+    "listing_time_ts": 1783512000,
+    "listing_time_str": "2026-07-08 12:00 UTC",
+    "monitored": false
   }
 ]
