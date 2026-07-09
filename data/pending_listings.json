@@ -490,5 +490,11 @@
     "listing_time_ts": 1783512000,
     "listing_time_str": "2026-07-08 12:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "BANA",
+    "listing_time_ts": 1783670400,
+    "listing_time_str": "2026-07-10 08:00 UTC",
+    "monitored": false
   }
 ]
