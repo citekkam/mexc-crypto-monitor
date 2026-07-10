@@ -496,5 +496,29 @@
     "listing_time_ts": 1783670400,
     "listing_time_str": "2026-07-10 08:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "CORZON",
+    "listing_time_ts": 1783690200,
+    "listing_time_str": "2026-07-10 13:30 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "HALON",
+    "listing_time_ts": 1783690200,
+    "listing_time_str": "2026-07-10 13:30 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "SOXLON",
+    "listing_time_ts": 1783688400,
+    "listing_time_str": "2026-07-10 13:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "SOXSON",
+    "listing_time_ts": 1783688400,
+    "listing_time_str": "2026-07-10 13:00 UTC",
+    "monitored": false
   }
 ]
