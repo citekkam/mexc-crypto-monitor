@@ -526,5 +526,11 @@
     "listing_time_ts": 1783846800,
     "listing_time_str": "2026-07-12 09:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "SKHYON",
+    "listing_time_ts": 1783949400,
+    "listing_time_str": "2026-07-13 13:30 UTC",
+    "monitored": false
   }
 ]
