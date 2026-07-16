@@ -532,5 +532,35 @@
     "listing_time_ts": 1783949400,
     "listing_time_str": "2026-07-13 13:30 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "APHON",
+    "listing_time_ts": 1784208600,
+    "listing_time_str": "2026-07-16 13:30 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "FNON",
+    "listing_time_ts": 1784208600,
+    "listing_time_str": "2026-07-16 13:30 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "PWRON",
+    "listing_time_ts": 1784208600,
+    "listing_time_str": "2026-07-16 13:30 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "STMON",
+    "listing_time_ts": 1784208600,
+    "listing_time_str": "2026-07-16 13:30 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "TTON",
+    "listing_time_ts": 1784208600,
+    "listing_time_str": "2026-07-16 13:30 UTC",
+    "monitored": false
   }
 ]
