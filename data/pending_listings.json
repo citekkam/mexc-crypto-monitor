@@ -568,5 +568,29 @@
     "listing_time_ts": 1784620800,
     "listing_time_str": "2026-07-21 08:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "AGON",
+    "listing_time_ts": 1784813400,
+    "listing_time_str": "2026-07-23 13:30 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "GFSON",
+    "listing_time_ts": 1784813400,
+    "listing_time_str": "2026-07-23 13:30 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "MXLON",
+    "listing_time_ts": 1784813400,
+    "listing_time_str": "2026-07-23 13:30 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "NETON",
+    "listing_time_ts": 1784813400,
+    "listing_time_str": "2026-07-23 13:30 UTC",
+    "monitored": false
   }
 ]
