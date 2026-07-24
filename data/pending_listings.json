@@ -592,5 +592,11 @@
     "listing_time_ts": 1784813400,
     "listing_time_str": "2026-07-23 13:30 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "RAZOR",
+    "listing_time_ts": 1784966400,
+    "listing_time_str": "2026-07-25 08:00 UTC",
+    "monitored": false
   }
 ]
