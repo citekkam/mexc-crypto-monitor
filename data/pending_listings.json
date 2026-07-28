@@ -598,5 +598,11 @@
     "listing_time_ts": 1784966400,
     "listing_time_str": "2026-07-25 08:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "XPLK",
+    "listing_time_ts": 1785319200,
+    "listing_time_str": "2026-07-29 10:00 UTC",
+    "monitored": false
   }
 ]
