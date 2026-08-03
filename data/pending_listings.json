@@ -634,5 +634,11 @@
     "listing_time_ts": 1785751200,
     "listing_time_str": "2026-08-03 10:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "UPID",
+    "listing_time_ts": 1785830400,
+    "listing_time_str": "2026-08-04 08:00 UTC",
+    "monitored": false
   }
 ]
