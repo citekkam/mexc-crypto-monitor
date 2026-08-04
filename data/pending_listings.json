@@ -640,5 +640,11 @@
     "listing_time_ts": 1785830400,
     "listing_time_str": "2026-08-04 08:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "JMDT",
+    "listing_time_ts": 1785924000,
+    "listing_time_str": "2026-08-05 10:00 UTC",
+    "monitored": false
   }
 ]
