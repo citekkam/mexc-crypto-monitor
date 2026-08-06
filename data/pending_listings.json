@@ -646,5 +646,47 @@
     "listing_time_ts": 1785924000,
     "listing_time_str": "2026-08-05 10:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "UMX",
+    "listing_time_ts": 1786100400,
+    "listing_time_str": "2026-08-07 11:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "ZAY",
+    "listing_time_ts": 1786096800,
+    "listing_time_str": "2026-08-07 10:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "AEHRON",
+    "listing_time_ts": 1786023000,
+    "listing_time_str": "2026-08-06 13:30 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "APLDON",
+    "listing_time_ts": 1786023000,
+    "listing_time_str": "2026-08-06 13:30 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "AXTION",
+    "listing_time_ts": 1786023000,
+    "listing_time_str": "2026-08-06 13:30 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "SAPON",
+    "listing_time_ts": 1786023000,
+    "listing_time_str": "2026-08-06 13:30 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "USARON",
+    "listing_time_ts": 1786023000,
+    "listing_time_str": "2026-08-06 13:30 UTC",
+    "monitored": false
   }
 ]
