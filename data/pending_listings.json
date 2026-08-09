@@ -688,5 +688,11 @@
     "listing_time_ts": 1786023000,
     "listing_time_str": "2026-08-06 13:30 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "DOS",
+    "listing_time_ts": 1786359600,
+    "listing_time_str": "2026-08-10 11:00 UTC",
+    "monitored": false
   }
 ]
