@@ -694,5 +694,11 @@
     "listing_time_ts": 1786359600,
     "listing_time_str": "2026-08-10 11:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "AIR",
+    "listing_time_ts": 1786521600,
+    "listing_time_str": "2026-08-12 08:00 UTC",
+    "monitored": false
   }
 ]
