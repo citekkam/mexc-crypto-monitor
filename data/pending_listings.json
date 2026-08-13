@@ -700,5 +700,11 @@
     "listing_time_ts": 1786521600,
     "listing_time_str": "2026-08-12 08:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "KII",
+    "listing_time_ts": 1786712400,
+    "listing_time_str": "2026-08-14 13:00 UTC",
+    "monitored": false
   }
 ]
