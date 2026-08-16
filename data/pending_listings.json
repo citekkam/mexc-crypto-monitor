@@ -706,5 +706,11 @@
     "listing_time_ts": 1786712400,
     "listing_time_str": "2026-08-14 13:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "OV",
+    "listing_time_ts": 1786953600,
+    "listing_time_str": "2026-08-17 08:00 UTC",
+    "monitored": false
   }
 ]
