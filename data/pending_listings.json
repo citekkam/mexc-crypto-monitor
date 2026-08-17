@@ -712,5 +712,11 @@
     "listing_time_ts": 1786953600,
     "listing_time_str": "2026-08-17 08:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "SWARM",
+    "listing_time_ts": 1787133600,
+    "listing_time_str": "2026-08-19 10:00 UTC",
+    "monitored": false
   }
 ]
