@@ -724,5 +724,17 @@
     "listing_time_ts": 1787230800,
     "listing_time_str": "2026-08-20 13:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "ALIGN",
+    "listing_time_ts": 1787252400,
+    "listing_time_str": "2026-08-20 19:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "MRNAON",
+    "listing_time_ts": 1787216400,
+    "listing_time_str": "2026-08-20 09:00 UTC",
+    "monitored": false
   }
 ]
