@@ -742,5 +742,11 @@
     "listing_time_ts": 1787385600,
     "listing_time_str": "2026-08-22 08:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "DGAI",
+    "listing_time_ts": 1787558400,
+    "listing_time_str": "2026-08-24 08:00 UTC",
+    "monitored": false
   }
 ]
