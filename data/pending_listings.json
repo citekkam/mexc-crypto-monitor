@@ -748,5 +748,17 @@
     "listing_time_ts": 1787558400,
     "listing_time_str": "2026-08-24 08:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "TMX",
+    "listing_time_ts": 1787652000,
+    "listing_time_str": "2026-08-25 10:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "SLCW",
+    "listing_time_ts": 1787644800,
+    "listing_time_str": "2026-08-25 08:00 UTC",
+    "monitored": false
   }
 ]
