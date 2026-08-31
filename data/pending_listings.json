@@ -760,5 +760,11 @@
     "listing_time_ts": 1787644800,
     "listing_time_str": "2026-08-25 08:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "PBALL",
+    "listing_time_ts": 1788256800,
+    "listing_time_str": "2026-09-01 10:00 UTC",
+    "monitored": false
   }
 ]
