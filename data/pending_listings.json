@@ -766,5 +766,11 @@
     "listing_time_ts": 1788256800,
     "listing_time_str": "2026-09-01 10:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "CP",
+    "listing_time_ts": 1788361200,
+    "listing_time_str": "2026-09-02 15:00 UTC",
+    "monitored": false
   }
 ]
