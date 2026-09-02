@@ -772,5 +772,11 @@
     "listing_time_ts": 1788361200,
     "listing_time_str": "2026-09-02 15:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "MODA",
+    "listing_time_ts": 1788429600,
+    "listing_time_str": "2026-09-03 10:00 UTC",
+    "monitored": false
   }
 ]
