@@ -778,5 +778,11 @@
     "listing_time_ts": 1788429600,
     "listing_time_str": "2026-09-03 10:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "BLOB",
+    "listing_time_ts": 1788768000,
+    "listing_time_str": "2026-09-07 08:00 UTC",
+    "monitored": false
   }
 ]
