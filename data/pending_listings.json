@@ -790,5 +790,11 @@
     "listing_time_ts": 1788944400,
     "listing_time_str": "2026-09-09 09:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "OKAI",
+    "listing_time_ts": 1789466400,
+    "listing_time_str": "2026-09-15 10:00 UTC",
+    "monitored": false
   }
 ]
