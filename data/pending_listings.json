@@ -796,5 +796,17 @@
     "listing_time_ts": 1789466400,
     "listing_time_str": "2026-09-15 10:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "MHA",
+    "listing_time_ts": 1789646400,
+    "listing_time_str": "2026-09-17 12:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "TINA",
+    "listing_time_ts": 1789639200,
+    "listing_time_str": "2026-09-17 10:00 UTC",
+    "monitored": false
   }
 ]
