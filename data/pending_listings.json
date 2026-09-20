@@ -808,5 +808,11 @@
     "listing_time_ts": 1789639200,
     "listing_time_str": "2026-09-17 10:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "MINT",
+    "listing_time_ts": 1789981200,
+    "listing_time_str": "2026-09-21 09:00 UTC",
+    "monitored": false
   }
 ]
