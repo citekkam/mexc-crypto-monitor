@@ -814,5 +814,11 @@
     "listing_time_ts": 1789981200,
     "listing_time_str": "2026-09-21 09:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "KRAFT",
+    "listing_time_ts": 1790244000,
+    "listing_time_str": "2026-09-24 10:00 UTC",
+    "monitored": false
   }
 ]
