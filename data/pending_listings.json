@@ -820,5 +820,11 @@
     "listing_time_ts": 1790244000,
     "listing_time_str": "2026-09-24 10:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "MBK",
+    "listing_time_ts": 1790330400,
+    "listing_time_str": "2026-09-25 10:00 UTC",
+    "monitored": false
   }
 ]
