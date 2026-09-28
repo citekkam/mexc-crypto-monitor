@@ -838,5 +838,11 @@
     "listing_time_ts": 1790582400,
     "listing_time_str": "2026-09-28 08:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "CTM",
+    "listing_time_ts": 1790668800,
+    "listing_time_str": "2026-09-29 08:00 UTC",
+    "monitored": false
   }
 ]
