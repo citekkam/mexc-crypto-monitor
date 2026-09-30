@@ -844,5 +844,11 @@
     "listing_time_ts": 1790668800,
     "listing_time_str": "2026-09-29 08:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "THEO",
+    "listing_time_ts": 1790859600,
+    "listing_time_str": "2026-10-01 13:00 UTC",
+    "monitored": false
   }
 ]
