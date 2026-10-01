@@ -850,5 +850,11 @@
     "listing_time_ts": 1790859600,
     "listing_time_str": "2026-10-01 13:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "FOLD",
+    "listing_time_ts": 1790935200,
+    "listing_time_str": "2026-10-02 10:00 UTC",
+    "monitored": false
   }
 ]
