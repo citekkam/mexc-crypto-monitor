@@ -856,5 +856,11 @@
     "listing_time_ts": 1790935200,
     "listing_time_str": "2026-10-02 10:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "GTT",
+    "listing_time_ts": 1791014400,
+    "listing_time_str": "2026-10-03 08:00 UTC",
+    "monitored": false
   }
 ]
