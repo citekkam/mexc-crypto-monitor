@@ -862,5 +862,17 @@
     "listing_time_ts": 1791014400,
     "listing_time_str": "2026-10-03 08:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "WFI",
+    "listing_time_ts": 1791280800,
+    "listing_time_str": "2026-10-06 10:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "CTX",
+    "listing_time_ts": 1791277200,
+    "listing_time_str": "2026-10-06 09:00 UTC",
+    "monitored": false
   }
 ]
