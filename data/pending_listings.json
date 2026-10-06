@@ -874,5 +874,11 @@
     "listing_time_ts": 1791277200,
     "listing_time_str": "2026-10-06 09:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "CROC",
+    "listing_time_ts": 1791360000,
+    "listing_time_str": "2026-10-07 08:00 UTC",
+    "monitored": false
   }
 ]
