@@ -886,5 +886,17 @@
     "listing_time_ts": 1791453600,
     "listing_time_str": "2026-10-08 10:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "CENT",
+    "listing_time_ts": 1791795600,
+    "listing_time_str": "2026-10-12 09:00 UTC",
+    "monitored": false
+  },
+  {
+    "symbol": "YVE",
+    "listing_time_ts": 1791792000,
+    "listing_time_str": "2026-10-12 08:00 UTC",
+    "monitored": false
   }
 ]
