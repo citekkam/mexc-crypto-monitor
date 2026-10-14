@@ -904,5 +904,11 @@
     "listing_time_ts": 1791885600,
     "listing_time_str": "2026-10-13 10:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "CHOMP",
+    "listing_time_ts": 1792051200,
+    "listing_time_str": "2026-10-15 08:00 UTC",
+    "monitored": false
   }
 ]
