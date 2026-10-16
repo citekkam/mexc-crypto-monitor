@@ -916,5 +916,11 @@
     "listing_time_ts": 1792144800,
     "listing_time_str": "2026-10-16 10:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "HDLR",
+    "listing_time_ts": 1792224000,
+    "listing_time_str": "2026-10-17 08:00 UTC",
+    "monitored": false
   }
 ]
