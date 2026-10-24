@@ -928,5 +928,11 @@
     "listing_time_ts": 1792587600,
     "listing_time_str": "2026-10-21 13:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "LALA",
+    "listing_time_ts": 1792922400,
+    "listing_time_str": "2026-10-25 10:00 UTC",
+    "monitored": false
   }
 ]
