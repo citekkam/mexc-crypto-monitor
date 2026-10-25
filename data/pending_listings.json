@@ -934,5 +934,11 @@
     "listing_time_ts": 1792922400,
     "listing_time_str": "2026-10-25 10:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "KAMIRAI",
+    "listing_time_ts": 1793008800,
+    "listing_time_str": "2026-10-26 10:00 UTC",
+    "monitored": false
   }
 ]
