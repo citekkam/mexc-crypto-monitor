@@ -946,5 +946,11 @@
     "listing_time_ts": 1793181600,
     "listing_time_str": "2026-10-28 10:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "RSGP",
+    "listing_time_ts": 1793286000,
+    "listing_time_str": "2026-10-29 15:00 UTC",
+    "monitored": false
   }
 ]
