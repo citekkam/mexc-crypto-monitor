@@ -952,5 +952,11 @@
     "listing_time_ts": 1793286000,
     "listing_time_str": "2026-10-29 15:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "PREDICT",
+    "listing_time_ts": 1793350800,
+    "listing_time_str": "2026-10-30 09:00 UTC",
+    "monitored": false
   }
 ]
