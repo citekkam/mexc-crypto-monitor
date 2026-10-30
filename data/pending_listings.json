@@ -958,5 +958,11 @@
     "listing_time_ts": 1793350800,
     "listing_time_str": "2026-10-30 09:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "NOMA",
+    "listing_time_ts": 1793437200,
+    "listing_time_str": "2026-10-31 09:00 UTC",
+    "monitored": false
   }
 ]
