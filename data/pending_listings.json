@@ -964,5 +964,11 @@
     "listing_time_ts": 1793437200,
     "listing_time_str": "2026-10-31 09:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "EMYA",
+    "listing_time_ts": 1793613600,
+    "listing_time_str": "2026-11-02 10:00 UTC",
+    "monitored": false
   }
 ]
