@@ -970,5 +970,11 @@
     "listing_time_ts": 1793613600,
     "listing_time_str": "2026-11-02 10:00 UTC",
     "monitored": false
+  },
+  {
+    "symbol": "KOR",
+    "listing_time_ts": 1793800800,
+    "listing_time_str": "2026-11-04 14:00 UTC",
+    "monitored": false
   }
 ]
